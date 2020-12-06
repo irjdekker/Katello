@@ -62,25 +62,60 @@ hammer repository create --organization-id 1 --product "CentOS 7 Linux x86_64" -
 --download-policy "on_demand" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.centos.org/centos-7/7/updates/x86_64/" --mirror-on-sync "no"
 hammer repository create --organization-id 1 --product "CentOS 7 Linux x86_64" --name "CentOS 7 Ansible x86_64" --label "CentOS_Ansible_x86_64" --content-type "yum" \
 --download-policy "on_demand" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.centos.org/centos-7/7/configmanagement/x86_64/ansible-29/" --mirror-on-sync "no"
-hammer sync-plan create --organization-id 1 --name "Daily Sync" --interval daily --enabled true –sync-date "2020-12-06 02:30:00"
-hammer product set-sync-plan --organization-id 1 --name "CentOS 7 OS x86_64" --sync-plan "Daily Sync"
-hammer product synchronize --organization-id 1 --name "CentOS 7 OS x86_64"
+hammer sync-plan create --organization-id 1 --name "Daily Sync" --interval daily --enabled true –-sync-date "2020-12-06 02:30:00"
+hammer product set-sync-plan --organization-id 1 --name "CentOS 7 Linux x86_64" --sync-plan "Daily Sync"
+hammer product synchronize --organization-id 1 --name "CentOS 7 Linux x86_64"
 hammer lifecycle-environment create --organization-id 1 --name "Development" --label "Development" --prior "Library"
 hammer lifecycle-environment create --organization-id 1 --name "Test" --label "Test" --prior "Development"
 hammer lifecycle-environment create --organization-id 1 --name "Acceptance" --label "Acceptance" --prior "Test"
 hammer lifecycle-environment create --organization-id 1 --name "Production" --label "Production" --prior "Acceptance"
-hammer content-view create --organization-id 1 --name "CentOS 7" --label "CentOS_7" --product "CentOS 7 Linux x86_64"
+hammer content-view create --organization-id 1 --name "CentOS 7" --label "CentOS_7"
+hammer content-view add-repository --organization-id 1 --name "CentOS 7" --product "CentOS 7 Linux x86_64" --repository-id 1
+hammer content-view add-repository --organization-id 1 --name "CentOS 7" --product "CentOS 7 Linux x86_64" --repository-id 2
+hammer content-view add-repository --organization-id 1 --name "CentOS 7" --product "CentOS 7 Linux x86_64" --repository-id 3
+hammer content-view add-repository --organization-id 1 --name "CentOS 7" --product "CentOS 7 Linux x86_64" --repository-id 4
 hammer content-view publish --organization-id 1 --name "CentOS 7" --description "Initial publishing"
 hammer content-view version promote --organization-id 1 --content-view "CentOS 7" --version "1.0" --to-lifecycle-environment "Development"
 hammer content-view version promote --organization-id 1 --content-view "CentOS 7" --version "1.0" --to-lifecycle-environment "Test"
 hammer content-view version promote --organization-id 1 --content-view "CentOS 7" --version "1.0" --to-lifecycle-environment "Acceptance"
 hammer content-view version promote --organization-id 1 --content-view "CentOS 7" --version "1.0" --to-lifecycle-environment "Production"
-hammer activation-key create --name "CentOS_7_Development_Key" --lifecycle-environment "Development" --content-view "CentOS 7" --unlimited-hosts
-hammer activation-key create --name "CentOS_7_Test_Key" --lifecycle-environment "Test" --content-view "CentOS 7" --unlimited-hosts
-hammer activation-key create --name "CentOS_7_Acceptance_Key" --lifecycle-environment "Acceptance" --content-view "CentOS 7" --unlimited-hosts
-hammer activation-key create --name "CentOS_7_Production_Key" --lifecycle-environment "Production" --content-view "CentOS 7" --unlimited-hosts
-hammer activation-key add-subscription --name "CentOS_7_Development_Key" --quantity "1" --subscription-id "1"
-hammer activation-key add-subscription --name "CentOS_7_Test_Key" --quantity "1" --subscription-id "1"
-hammer activation-key add-subscription --name "CentOS_7_Acceptance_Key" --quantity "1" --subscription-id "1"
-hammer activation-key add-subscription --name "CentOS_7_Production_Key" --quantity "1" --subscription-id "1"
+hammer activation-key create --organization-id 1 --name "CentOS_7_Development_Key" --lifecycle-environment "Development" --content-view "CentOS 7" --unlimited-hosts
+hammer activation-key create --organization-id 1 --name "CentOS_7_Test_Key" --lifecycle-environment "Test" --content-view "CentOS 7" --unlimited-hosts
+hammer activation-key create --organization-id 1 --name "CentOS_7_Acceptance_Key" --lifecycle-environment "Acceptance" --content-view "CentOS 7" --unlimited-hosts
+hammer activation-key create --organization-id 1 --name "CentOS_7_Production_Key" --lifecycle-environment "Production" --content-view "CentOS 7" --unlimited-hosts
+hammer activation-key add-subscription --organization-id 1 --name "CentOS_7_Development_Key" --quantity "1" --subscription-id "1"
+hammer activation-key add-subscription --organization-id 1 --name "CentOS_7_Test_Key" --quantity "1" --subscription-id "1"
+hammer activation-key add-subscription --organization-id 1 --name "CentOS_7_Acceptance_Key" --quantity "1" --subscription-id "1"
+hammer activation-key add-subscription --organization-id 1 --name "CentOS_7_Production_Key" --quantity "1" --subscription-id "1"
+hammer compute-resource create --organization-id 1 --location-id 2 --name "Tanix vCenter" --provider "Vmware" --server "vcenter.tanix.nl" \
+--user "administrator@tanix.local" --password "$password" --datacenter "Datacenter"
+cluster_id=$(hammer compute-resource clusters --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
+cluster=$(hammer compute-resource clusters --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
+network_id=$(hammer compute-resource networks --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '6q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
+network=$(hammer compute-resource networks --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '6q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
+domain_id=$(hammer domain list --organization-id 1 --location-id 2 | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
+domain=$(hammer domain list --organization-id 1 --location-id 2 | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
+os_id=$(hammer os list | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
+os=$(hammer os list | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
+capsule_id=$(hammer capsule list | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
+capsule=$(hammer capsule list | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
+hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile "1-Small" --compute-resource "Tanix vCenter" \
+--compute-attributes cpus=1,corespersocket=1,memory_mb=1024,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 \
+--volume datastore="Datastore Non-SSD",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id
+hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile "2-Medium" --compute-resource "Tanix vCenter" \
+--compute-attributes cpus=1,corespersocket=2,memory_mb=2048,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 \
+--volume datastore="Datastore Non-SSD",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id
+hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile "3-Large" --compute-resource "Tanix vCenter" \
+--compute-attributes cpus=1,corespersocket=2,memory_mb=4096,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 \
+--volume datastore="Datastore Non-SSD",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id
+hammer subnet create --organization-id 1 --location-id 2 --domain-ids $domain_id --name $network --network-type "IPv4" --network "10.10.5.0" \
+--prefix 24 --gateway "10.10.5.1" --dns-primary "10.10.5.1" --boot-mode "Static" 
+hammer hostgroup create --organization-id 1 --location-id 2 --name "hg_production" --lifecycle-environment "Production" \
+--content-view "CentOS 7" --content-source $capsule --compute-resource "Tanix vCenter" --compute-profile "1-Small" --domain-id $domain_id \
+--subnet $network --architecture "x86_64" --operatingsystem $os --partition-table "Kickstart default"
+hammer hostgroup set-parameter --hostgroup "hg_production" --name "kt_activation_keys" --value "CentOS_7_Production_Key"
+yum install shim-x64 -y
+/usr/bin/cp -f /boot/efi/EFI/centos/shimx64.efi /var/lib/foreman/bootdisk/
+yum install grub2-efi-x64 -y
+/usr/bin/cp -f /boot/efi/EFI/centos/grubx64.efi /var/lib/foreman/bootdisk/
 read -s -n 1 -p "Press any key to continue . . ."
