@@ -8,13 +8,24 @@
 
 ---
 certs:
+  country: NL
+  state: North Brabant
+  city: Sint-Oedenrode
+  org: Tanix
+  org_unit: Katello
   group: foreman
 foreman:
   client_ssl_ca: "/etc/foreman/proxy_ca.pem"
   client_ssl_cert: "/etc/foreman/client_cert.pem"
   client_ssl_key: "/etc/foreman/client_key.pem"
-  initial_location: Home
+  initial_admin_username: admin
+  initial_admin_first_name: Jeroen
+  initial_admin_last_name: Dekker
+  initial_admin_email: ir.j.dekker@gmail.com
+  initial_admin_locale:
+  initial_admin_timezone:
   initial_organization: Tanix
+  initial_location: Home
   max_keepalive_requests: 10000
   server_ssl_ca: "/etc/pki/katello/certs/katello-default-ca.crt"
   server_ssl_cert: "/etc/pki/katello/certs/katello-apache.crt"
@@ -75,6 +86,10 @@ foreman_proxy:
   ssl_cert: "/etc/foreman-proxy/ssl_cert.pem"
   ssl_key: "/etc/foreman-proxy/ssl_key.pem"
   ssl_port: '9090'
+foreman_proxy_content:
+  pulp_num_workers: 3
+  pulp_worker_timeout: 120
+  proxy_pulp_yum_to_pulpcore: true  
 foreman_proxy::plugin::ansible: true
 foreman_proxy::plugin::chef: false
 foreman_proxy::plugin::dhcp::infoblox: false
@@ -87,9 +102,9 @@ foreman_proxy::plugin::pulp:
   pulpcore_enabled: true
 foreman_proxy::plugin::remote_execution::ssh: false
 foreman_proxy::plugin::salt: false
-foreman_proxy_content:
-  proxy_pulp_yum_to_pulpcore: true
 katello:
+  num_pulp_workers: 3
+  pulp_worker_timeout: 120  
   use_pulp_2_for_yum: false
 puppet:
   server: true
