@@ -55,13 +55,13 @@ cd /etc/pki/rpm-gpg/import/
 wget -P /etc/pki/rpm-gpg/import/ http://mirror.centos.org/centos-7/7/os/x86_64/RPM-GPG-KEY-CentOS-7
 hammer gpg create --organization-id 1 --key "RPM-GPG-KEY-CentOS-7" --name "RPM-GPG-KEY-CentOS-7"
 hammer repository create --organization-id 1 --product "CentOS 7 Linux x86_64" --name "CentOS 7 OS x86_64" --label "CentOS_7_OS_x86_64" --content-type "yum" \
---download-policy "on_demand" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.centos.org/centos-7/7/os/x86_64/" --mirror-on-sync "no"
+--download-policy "immediate" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.centos.org/centos-7/7/os/x86_64/" --mirror-on-sync "no"
 hammer repository create --organization-id 1 --product "CentOS 7 Linux x86_64" --name "CentOS 7 Extra x86_64" --label "CentOS_7_Extra_x86_64" --content-type "yum" \
---download-policy "on_demand" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.centos.org/centos-7/7/extras/x86_64/" --mirror-on-sync "no"
+--download-policy "immediate" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.centos.org/centos-7/7/extras/x86_64/" --mirror-on-sync "no"
 hammer repository create --organization-id 1 --product "CentOS 7 Linux x86_64" --name "CentOS 7 Updates x86_64" --label "CentOS_7_Updates_x86_64" --content-type "yum" \
---download-policy "on_demand" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.centos.org/centos-7/7/updates/x86_64/" --mirror-on-sync "no"
+--download-policy "immediate" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.centos.org/centos-7/7/updates/x86_64/" --mirror-on-sync "no"
 hammer repository create --organization-id 1 --product "CentOS 7 Linux x86_64" --name "CentOS 7 Ansible x86_64" --label "CentOS_Ansible_x86_64" --content-type "yum" \
---download-policy "on_demand" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.centos.org/centos-7/7/configmanagement/x86_64/ansible-29/" --mirror-on-sync "no"
+--download-policy "immediate" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.centos.org/centos-7/7/configmanagement/x86_64/ansible-29/" --mirror-on-sync "no"
 hammer sync-plan create --organization-id 1 --name "Daily Sync" --interval daily --enabled true –-sync-date "2020-12-06 02:30:00"
 hammer product set-sync-plan --organization-id 1 --name "CentOS 7 Linux x86_64" --sync-plan "Daily Sync"
 hammer product synchronize --organization-id 1 --name "CentOS 7 Linux x86_64"
@@ -100,7 +100,7 @@ os=$(hammer os list | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
 capsule_id=$(hammer capsule list | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
 capsule=$(hammer capsule list | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
 hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile "1-Small" --compute-resource "Tanix vCenter" \
---compute-attributes cpus=1,corespersocket=1,memory_mb=1024,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 \
+--compute-attributes cpus=1,corespersocket=1,memory_mb=2048,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 \
 --volume datastore="Datastore Non-SSD",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id
 hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile "2-Medium" --compute-resource "Tanix vCenter" \
 --compute-attributes cpus=1,corespersocket=2,memory_mb=2048,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 \
