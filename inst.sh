@@ -1,124 +1,407 @@
 #!/bin/bash
 ## The easiest way to get the script on your machine is:
 ## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/inst.sh 2>/dev/null | bash -s <password>
+
+## Exit when any command fails
+set -e
+
+## Keep track of the last executed command
+trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
+## Echo an error message before exiting
+trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
+
+## *************************************************************************************************** ##
+##      __      __     _____  _____          ____  _      ______  _____                                ##
+##      \ \    / /\   |  __ \|_   _|   /\   |  _ \| |    |  ____|/ ____|                               ##
+##       \ \  / /  \  | |__) | | |    /  \  | |_) | |    | |__  | (___                                 ##
+##        \ \/ / /\ \ |  _  /  | |   / /\ \ |  _ <| |    |  __|  \___ \                                ##
+##         \  / ____ \| | \ \ _| |_ / ____ \| |_) | |____| |____ ____) |                               ##
+##          \/_/    \_\_|  \_\_____/_/    \_\____/|______|______|_____/                                ##
+##                                                                                                     ##
+## *************************************************************************************************** ##
+##
+## The following variables are defined below
+
+OSSETUP=('CentOS 7.x,http://mirror.ams1.nl.leaseweb.net/centos/7/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
+'CentOS 7.6,http://mirror.leaseweb.com/centos-vault/7.6.1810/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible27/')
+LOGFILE="$HOME/katello-install-$(date +%Y-%m-%d_%Hh%Mm).log"
+IRed='\e[0;31m'
+IGreen='\e[0;32m'
+Reset='\e[0m'
+
+## *************************************************************************************************** ##
+##       _____   ____  _    _ _______ _____ _   _ ______  _____                                        ##
+##      |  __ \ / __ \| |  | |__   __|_   _| \ | |  ____|/ ____|                                       ##
+##      | |__) | |  | | |  | |  | |    | | |  \| | |__  | (___                                         ##
+##      |  _  /| |  | | |  | |  | |    | | | . ` |  __|  \___ \                                        ##
+##      | | \ \| |__| | |__| |  | |   _| |_| |\  | |____ ____) |                                       ##
+##      |_|  \_\\____/ \____/   |_|  |_____|_| \_|______|_____/                                        ##
+##                                                                                                     ##
+## *************************************************************************************************** ##
+
+do_setup_locale() {
+    do_function_task "localectl set-locale LC_CTYPE=en_US.utf8"
+    do_function_task "localectl status"
+}
+
+do_check_hostname() {
+    do_function_task "hostnamectl status"
+    do_function_task "dnsdomainname -f"
+    do_function_task "hostname"    
+}
+
+do_setup_chrony() {
+    do_function_task "yum install chrony -y"
+    do_function_task "systemctl enable chronyd"
+    do_function_task "systemctl start chronyd"
+    do_function_task "chronyc sources"    
+}
+
+do_setup_ntp() {
+    do_function_task "timedatectl set-ntp true"
+    do_function_task "timedatectl status"
+}
+
+do_setup_firewall() {
+    do_function_task "firewall-cmd --add-port={53,80,443,5647,9090}/tcp --permanent"
+    do_function_task "firewall-cmd --add-port={67-69,53}/udp --permanent"
+    do_function_task "firewall-cmd --reload"
+    do_function_task "firewall-cmd --list-all"    
+}
+
+do_clean_disks() {
+    do_function_task "lvremove -f /dev/vg_pulp/lv_pulp"
+    do_function_task "vgremove -f vg_pulp"
+    do_function_task "pvremove -f /dev/sdb"    
+}
+
+do_setup_disks() {
+    do_function_task "pvcreate /dev/sdb"
+    do_function_task "vgcreate vg_pulp /dev/sdb"
+    do_function_task "lvcreate -y -l 100%FREE -n lv_pulp vg_pulp"
+    do_function_task "mkfs.xfs -f /dev/mapper/vg_pulp-lv_pulp"
+    do_function_task "mkdir /var/lib/pulp"
+    do_function_task "mount /dev/mapper/vg_pulp-lv_pulp /var/lib/pulp/" 
+    do_function_task "echo '/dev/mapper/vg_pulp-lv_pulp /var/lib/pulp/ xfs defaults 0 0' >> /etc/fstab" 
+    do_function_task "tail -n1 /etc/fstab " 
+    do_function_task "restorecon -Rv /var/lib/pulp/" 
+    do_function_task "df -hP /var/lib/pulp/"     
+}
+
+do_add_repositories() {
+    do_function_task "yum -y localinstall https://yum.theforeman.org/releases/2.2/el7/x86_64/foreman-release.rpm"
+    do_function_task "yum -y localinstall https://fedorapeople.org/groups/katello/releases/yum/3.17/katello/el7/x86_64/katello-repos-latest.rpm"
+    do_function_task "yum -y localinstall https://yum.puppet.com/puppet6-release-el-7.noarch.rpm"
+    do_function_task "yum -y install epel-release centos-release-scl-rh"    
+}
+
+do_config_katello() {
+    do_function_task "cd /etc/foreman-installer/scenarios.d/"
+    do_function_task "mv /etc/foreman-installer/scenarios.d/katello-answers.yaml /etc/foreman-installer/scenarios.d/katello-answers.yaml.orig"
+    do_function_task "wget -P /etc/foreman-installer/scenarios.d/ https://raw.githubusercontent.com/irjdekker/Katello/master/katello-answers.yaml"
+    do_function_task "chown root:root /etc/foreman-installer/scenarios.d/katello-answers.yaml"
+    do_function_task "chmod 600 /etc/foreman-installer/scenarios.d/katello-answers.yaml"   
+}
+
+do_install_katello() {
+    local PASSWORD
+    PASSWORD="$1"
+    do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username admin --foreman-initial-admin-password \"$PASSWORD\""
+    do_function_task "foreman-maintain service status"  
+}
+
+do_compute_profiles() {
+    local cluster
+    cluster=$(hammer compute-resource clusters --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
+    local network_id
+    network_id=$(hammer compute-resource networks --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '6q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
+
+    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"1-Small\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 --volume datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
+    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"2-Medium\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=2,memory_mb=2048,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 --volume datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
+    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"3-Large\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=2,memory_mb=4096,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 --volume datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
+}
+
+do_create_subnet() {
+    local domain_id
+    domain_id=$(hammer domain list --organization-id 1 --location-id 2 | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
+
+    do_function_task "hammer subnet create --organization-id 1 --location-id 2 --domain-ids \"$domain_id\" --name \"tanix-5\" --network-type \"IPv4\" --network \"10.10.5.0\" --prefix 24 --gateway \"10.10.5.1\" --dns-primary \"10.10.5.1\" --boot-mode \"Static\"" 
+}
+
+do_centos7_credential() {
+    do_function_task "mkdir -p /etc/pki/rpm-gpg/import"
+    do_function_task "cd /etc/pki/rpm-gpg/import/"  
+    do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://mirror.ams1.nl.leaseweb.net/centos/7/os/x86_64/RPM-GPG-KEY-CentOS-7" 
+    do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-7\" --name \"RPM-GPG-KEY-CentOS-7\""     
+}
+
+do_lcm_setup() {
+    do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Development\" --label \"Development\" --prior \"Library\""
+    do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Test\" --label \"Test\" --prior \"Development\""  
+    do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Acceptance\" --label \"Acceptance\" --prior \"Test\""
+    do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Production\" --label \"Production\" --prior \"Acceptance\""      
+}
+
+do_populate_katello() {
+    local OS_VERSION
+    OS_VERSION="$1"
+    local OS_NICE
+    OS_NICE=${OS_VERSION//[^[:alnum:]-]/_}
+    local SYNC_TIME
+    SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
+
+    ## Create Katello product
+    do_function_task "hammer product create --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\""
+
+    ## Create Katello repositories
+    for item in "${OSSETUP[@]}"
+    do
+        if [[ $item == *","* ]]
+        then
+            IFS=',' read -ra tmpArray <<< "$item"
+            tmpOS=${tmpArray[0]}
+            tmpBaseUrl=${tmpArray[1]}
+            tmpBaseOS=${tmpArray[2]}
+            tmpBaseExtras=${tmpArray[3]}
+            tmpBaseUpdates=${tmpArray[4]}
+            tmpBaseAnsible=${tmpArray[5]}
+            
+            if (( OS_VERSION == tmpOS )) ; then
+                do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION OS x86_64\" --label \"CentOS_${OS_NICE}_OS_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseOS\" --mirror-on-sync \"no\""
+                do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Extras x86_64\" --label \"CentOS_${OS_NICE}_Extras_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseExtras\" --mirror-on-sync \"no\""
+                do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Updates x86_64\" --label \"CentOS_${OS_NICE}_Updates_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseUpdates\" --mirror-on-sync \"no\""
+                do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Ansible x86_64\" --label \"CentOS_${OS_NICE}_Ansible_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseAnsible\" --mirror-on-sync \"no\""                
+            fi
+        fi    
+    done
+
+    ## Create Katello synchronization plan
+    do_function_task "hammer sync-plan create --organization-id 1 --name \"Daily Sync $OS_VERSION\" --interval daily --enabled true --sync-date \"2020-01-01 $SYNC_TIME\""
+    do_function_task "hammer product set-sync-plan --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\" --sync-plan \"Daily Sync $OS_VERSION\""
+
+    ## Synchronize Katello repositories   
+    do_function_task "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION OS x86_64\""
+    do_function_task "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Extra x86_64\""
+    do_function_task "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Updates x86_64\""
+    do_function_task "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Ansible x86_64\""
+    
+    ## Create Katello content view
+    do_function_task "hammer content-view create --organization-id 1 --name \"CentOS $OS_VERSION\" --label \"CentOS_$OS_NICE\""
+    
+    ## Add repositories to content view
+    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION OS x86_64\""
+    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Extra x86_64\""
+    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Updates x86_64\""
+    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Ansible x86_64\""
+
+    ## Publish and promote content view
+    do_function_task "hammer content-view publish --organization-id 1 --name \"CentOS $OS_VERSION\" --description \"Initial publishing\""
+    do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Development\""
+    do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Test\""
+    do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Acceptance\""
+    do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Production\""
+    
+    ## Create Katello activation keys
+    do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Development_Key\" --lifecycle-environment \"Development\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
+    do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Test_Key\" --lifecycle-environment \"Test\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
+    do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Acceptance_Key\" --lifecycle-environment \"Acceptance\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
+    do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Production_Key\" --lifecycle-environment \"Production\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
+
+    ## Assign activation keys to Katello subscription (current view)
+    local subscription_id
+    subscription_id=$(hammer subscription list | grep "CentOS $OS_VERSION Linux x86_64" | cut -d "|" -f 1 | awk "{$1=$1};1")
+    do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Development_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
+    do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Test_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
+    do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Acceptance_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
+    do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Production_Key\" --quantity \"1\" --subscription-id \"$subscription_id\"" 
+
+    ## Create Katello hostgroup
+    local domain_id
+    domain_id=$(hammer domain list --organization-id 1 --location-id 2 | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_production_$OS_NICE\" --lifecycle-environment \"Production\" --content-view \"CentOS $OS_VERSION\" --content-source \"katello.tanix.nl\" --compute-resource \"Tanix vCenter\" --compute-profile \"1-Small\" --domain-id \"$domain_id\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS 7\" --partition-table \"Kickstart default\""
+    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_production_$OS_NICE\" --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_Production_Key\""    
+}
+
+do_setup_bootdisks() {
+    do_function_task "mkdir /var/lib/foreman/bootdisk"
+    do_function_task "yum install shim-x64 -y"
+    do_function_task "/usr/bin/cp -f /boot/efi/EFI/centos/shimx64.efi /var/lib/foreman/bootdisk/shimx64.efi"
+    do_function_task "yum install grub2-efi-x64 -y"
+    do_function_task "/usr/bin/cp -f /boot/efi/EFI/centos/grubx64.efi /var/lib/foreman/bootdisk/grubx64.efi"
+    do_function_task "chmod 744 /var/lib/foreman/bootdisk/*.efi"
+}
+print_padded_text() {
+    pad=$(printf '%0.1s' "*"{1..70})
+    padlength=140
+    updatetext=" $(date -u ) - $1 "
+    padleft=$(( (padlength - ${#updatetext}) / 2 ))
+    padright=$(( padlength - ${#updatetext} - padleft ))
+
+    printf '%*.*s' 0 $padleft "$pad"
+    printf '%s' "$updatetext"
+    printf '%*.*s' 0 $padright "$pad"
+    printf '\n'
+}
+
+print_task() {
+    local TEXT
+    TEXT="$1"
+    local STATUS
+    STATUS="$2"
+    local NEWLINE
+    NEWLINE="$3"
+
+    if (( STATUS == -2 )); then
+        PRINTTEXT="\r         "
+    elif (( STATUS == -1 )); then
+        print_padded_text "$TEXT" >> "$LOGFILE"
+        PRINTTEXT="\r[      ] "
+    elif (( STATUS == 0 )); then
+        PRINTTEXT="\r[  ${IGreen}OK${Reset}  ] "
+    elif (( STATUS >= 1 )); then
+        PRINTTEXT="\r[ ${IRed}FAIL${Reset} ] "
+    else
+        PRINTTEXT="\r         "
+    fi
+
+    PRINTTEXT+="$TEXT"
+
+    if [ "$NEWLINE" = "true" ] ; then
+        PRINTTEXT+="\n"
+    fi
+
+    printf "%b" "$PRINTTEXT"
+
+    if (( STATUS >= 1 )); then
+        exit
+    fi
+}
+
+run_cmd() {
+    if eval "$@" >> "$LOGFILE" 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+do_task() {
+    print_task "$1" -1 false
+    if run_cmd "$2"; then
+        print_task "$1" 0 true
+    else
+        print_task "$1" 1 true
+    fi
+}
+
+do_function_task() {
+    if ! run_cmd "$1"; then
+        print_task "$MESSAGE" 1 true
+    fi
+}
+
+do_function_task_if() {   
+    if ! run_cmd "$1"; then
+        do_function_task "$2"
+    else
+        do_function_task "$3"
+    fi
+}
+
+do_function() {
+    MESSAGE="$1"
+
+    print_task "$MESSAGE" -1 false
+    eval "$2"
+    print_task "$MESSAGE" 0 true
+}
+
+## *************************************************************************************************** ##
+##        __  __          _____ _   _                                                                  ##
+##       |  \/  |   /\   |_   _| \ | |                                                                 ##
+##       | \  / |  /  \    | | |  \| |                                                                 ##
+##       | |\/| | / /\ \   | | | . ` |                                                                 ##
+##       | |  | |/ ____ \ _| |_| |\  |                                                                 ##
+##       |_|  |_/_/    \_\_____|_| \_|                                                                 ##
+##                                                                                                     ##
+## *************************************************************************************************** ##
+
+tput civis
+
+## Check if password is specified
 if [[ $# -eq 0 ]]
 then
     echo "No password supplied"
     exit
 fi
-localectl set-locale LC_CTYPE=en_US.utf8
-localectl status
-hostnamectl status
-dnsdomainname -f
-hostname 
-yum install chrony -y
-systemctl enable chronyd
-systemctl start chronyd
-chronyc sources
-timedatectl set-ntp true
-timedatectl status
-firewall-cmd --add-port={53,80,443,5647,9090}/tcp --permanent
-firewall-cmd --add-port={67-69,53}/udp --permanent
-firewall-cmd --reload
-firewall-cmd --list-all
-lvremove -f /dev/vg_pulp/lv_pulp
-vgremove -f vg_pulp
-pvremove -f /dev/sdb
-pvcreate /dev/sdb
-vgcreate vg_pulp /dev/sdb
-lvcreate -y -l 100%FREE -n lv_pulp vg_pulp
-mkfs.xfs -f /dev/mapper/vg_pulp-lv_pulp
-mkdir /var/lib/pulp
-mount /dev/mapper/vg_pulp-lv_pulp /var/lib/pulp/
-echo "/dev/mapper/vg_pulp-lv_pulp /var/lib/pulp/ xfs defaults 0 0" >> /etc/fstab
-tail -n1 /etc/fstab 
-restorecon -Rv /var/lib/pulp/
-df -hP /var/lib/pulp/
-yum update -y
-yum -y localinstall https://yum.theforeman.org/releases/2.2/el7/x86_64/foreman-release.rpm
-yum -y localinstall https://fedorapeople.org/groups/katello/releases/yum/3.17/katello/el7/x86_64/katello-repos-latest.rpm
-yum -y localinstall https://yum.puppet.com/puppet6-release-el-7.noarch.rpm
-yum -y install epel-release centos-release-scl-rh
-yum install katello -y
-cd /etc/foreman-installer/scenarios.d/
-mv /etc/foreman-installer/scenarios.d/katello-answers.yaml /etc/foreman-installer/scenarios.d/katello-answers.yaml.orig
-wget -P /etc/foreman-installer/scenarios.d/ https://raw.githubusercontent.com/irjdekker/Katello/master/katello-answers.yaml
-chown root:root /etc/foreman-installer/scenarios.d/katello-answers.yaml
-chmod 600 /etc/foreman-installer/scenarios.d/katello-answers.yaml
-foreman-installer --scenario katello --foreman-initial-admin-username admin --foreman-initial-admin-password "$1"
-cat /var/log/foreman-installer/katello.log | grep -e "ERROR"
-foreman-maintain service status
-yum install open-vm-tools -y
-yum update -y
-hammer product create --organization-id 1 --name "CentOS 7 Linux x86_64"
-mkdir -p /etc/pki/rpm-gpg/import
-cd /etc/pki/rpm-gpg/import/
-wget -P /etc/pki/rpm-gpg/import/ http://mirror.centos.org/centos-7/7/os/x86_64/RPM-GPG-KEY-CentOS-7
-hammer gpg create --organization-id 1 --key "RPM-GPG-KEY-CentOS-7" --name "RPM-GPG-KEY-CentOS-7"
-hammer repository create --organization-id 1 --product "CentOS 7 Linux x86_64" --name "CentOS 7 OS x86_64" --label "CentOS_7_OS_x86_64" --content-type "yum" \
---download-policy "immediate" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.ams1.nl.leaseweb.net/centos/7/os/x86_64/" --mirror-on-sync "no"
-hammer repository create --organization-id 1 --product "CentOS 7 Linux x86_64" --name "CentOS 7 Extra x86_64" --label "CentOS_7_Extra_x86_64" --content-type "yum" \
---download-policy "immediate" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.ams1.nl.leaseweb.net/centos/7/extras/x86_64/" --mirror-on-sync "no"
-hammer repository create --organization-id 1 --product "CentOS 7 Linux x86_64" --name "CentOS 7 Updates x86_64" --label "CentOS_7_Updates_x86_64" --content-type "yum" \
---download-policy "immediate" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.ams1.nl.leaseweb.net/centos/7/updates/x86_64/" --mirror-on-sync "no"
-hammer repository create --organization-id 1 --product "CentOS 7 Linux x86_64" --name "CentOS 7 Ansible x86_64" --label "CentOS_Ansible_x86_64" --content-type "yum" \
---download-policy "immediate" --gpg-key "RPM-GPG-KEY-CentOS-7" --url "http://mirror.ams1.nl.leaseweb.net/centos/7/configmanagement/x86_64/ansible-29/" --mirror-on-sync "no"
-hammer sync-plan create --organization-id 1 --name "Daily Sync" --interval daily --enabled true --sync-date "2020-12-06 02:30:00" 
-hammer product set-sync-plan --organization-id 1 --name "CentOS 7 Linux x86_64" --sync-plan "Daily Sync"
-hammer product synchronize --organization-id 1 --name "CentOS 7 Linux x86_64"
-hammer lifecycle-environment create --organization-id 1 --name "Development" --label "Development" --prior "Library"
-hammer lifecycle-environment create --organization-id 1 --name "Test" --label "Test" --prior "Development"
-hammer lifecycle-environment create --organization-id 1 --name "Acceptance" --label "Acceptance" --prior "Test"
-hammer lifecycle-environment create --organization-id 1 --name "Production" --label "Production" --prior "Acceptance"
-hammer content-view create --organization-id 1 --name "CentOS 7" --label "CentOS_7"
-hammer content-view add-repository --organization-id 1 --name "CentOS 7" --product "CentOS 7 Linux x86_64" --repository-id 1
-hammer content-view add-repository --organization-id 1 --name "CentOS 7" --product "CentOS 7 Linux x86_64" --repository-id 2
-hammer content-view add-repository --organization-id 1 --name "CentOS 7" --product "CentOS 7 Linux x86_64" --repository-id 3
-hammer content-view add-repository --organization-id 1 --name "CentOS 7" --product "CentOS 7 Linux x86_64" --repository-id 4
-hammer content-view publish --organization-id 1 --name "CentOS 7" --description "Initial publishing"
-hammer content-view version promote --organization-id 1 --content-view "CentOS 7" --version "1.0" --to-lifecycle-environment "Development"
-hammer content-view version promote --organization-id 1 --content-view "CentOS 7" --version "1.0" --to-lifecycle-environment "Test"
-hammer content-view version promote --organization-id 1 --content-view "CentOS 7" --version "1.0" --to-lifecycle-environment "Acceptance"
-hammer content-view version promote --organization-id 1 --content-view "CentOS 7" --version "1.0" --to-lifecycle-environment "Production"
-hammer activation-key create --organization-id 1 --name "CentOS_7_Development_Key" --lifecycle-environment "Development" --content-view "CentOS 7" --unlimited-hosts
-hammer activation-key create --organization-id 1 --name "CentOS_7_Test_Key" --lifecycle-environment "Test" --content-view "CentOS 7" --unlimited-hosts
-hammer activation-key create --organization-id 1 --name "CentOS_7_Acceptance_Key" --lifecycle-environment "Acceptance" --content-view "CentOS 7" --unlimited-hosts
-hammer activation-key create --organization-id 1 --name "CentOS_7_Production_Key" --lifecycle-environment "Production" --content-view "CentOS 7" --unlimited-hosts
-hammer activation-key add-subscription --organization-id 1 --name "CentOS_7_Development_Key" --quantity "1" --subscription-id "1"
-hammer activation-key add-subscription --organization-id 1 --name "CentOS_7_Test_Key" --quantity "1" --subscription-id "1"
-hammer activation-key add-subscription --organization-id 1 --name "CentOS_7_Acceptance_Key" --quantity "1" --subscription-id "1"
-hammer activation-key add-subscription --organization-id 1 --name "CentOS_7_Production_Key" --quantity "1" --subscription-id "1"
-hammer compute-resource create --organization-id 1 --location-id 2 --name "Tanix vCenter" --provider "Vmware" --server "vcenter.tanix.nl" \
---user "administrator@tanix.local" --password "$1" --datacenter "Datacenter"
-cluster_id=$(hammer compute-resource clusters --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
-cluster=$(hammer compute-resource clusters --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
-network_id=$(hammer compute-resource networks --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '6q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
-network=$(hammer compute-resource networks --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '6q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
-domain_id=$(hammer domain list --organization-id 1 --location-id 2 | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
-domain=$(hammer domain list --organization-id 1 --location-id 2 | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
-os_id=$(hammer os list | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
-os=$(hammer os list | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
-capsule_id=$(hammer capsule list | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
-capsule=$(hammer capsule list | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
-echo "$cluster_id ($cluster) -- $network_id ($network) -- $domain_id ($domain) -- $os_id ($os) -- $capsule_id ($capsule)"
-hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile "1-Small" --compute-resource "Tanix vCenter" \
---compute-attributes cpus=1,corespersocket=1,memory_mb=2048,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 \
---volume datastore="Datastore Non-SSD",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id
-hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile "2-Medium" --compute-resource "Tanix vCenter" \
---compute-attributes cpus=1,corespersocket=2,memory_mb=2048,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 \
---volume datastore="Datastore Non-SSD",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id
-hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile "3-Large" --compute-resource "Tanix vCenter" \
---compute-attributes cpus=1,corespersocket=2,memory_mb=4096,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 \
---volume datastore="Datastore Non-SSD",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id
-hammer subnet create --organization-id 1 --location-id 2 --domain-ids "$domain_id" --name "$network" --network-type "IPv4" --network "10.10.5.0" \
---prefix 24 --gateway "10.10.5.1" --dns-primary "10.10.5.1" --boot-mode "Static" 
-hammer hostgroup create --organization-id 1 --location-id 2 --name "hg_production" --lifecycle-environment "Production" \
---content-view "CentOS 7" --content-source "$capsule" --compute-resource "Tanix vCenter" --compute-profile "1-Small" --domain-id "$domain_id" \
---subnet "$network" --architecture "x86_64" --operatingsystem "$os" --partition-table "Kickstart default"
-hammer hostgroup set-parameter --hostgroup "hg_production" --name "kt_activation_keys" --value "CentOS_7_Production_Key"
-mkdir /var/lib/foreman/bootdisk
-yum install shim-x64 -y
-/usr/bin/cp -f /boot/efi/EFI/centos/shimx64.efi /var/lib/foreman/bootdisk/shimx64.efi
-yum install grub2-efi-x64 -y
-/usr/bin/cp -f /boot/efi/EFI/centos/grubx64.efi /var/lib/foreman/bootdisk/grubx64.efi
-read -s -n 1 -p "Press any key to continue . . ."
+
+PASSWORD="$1"
+
+## Check if script run by user root
+if [ "$(whoami)" != "root" ]; then
+    echo "Script startup must be run as user: root"
+    exit
+fi
+
+## Setup locale
+do_function "Setup locale" "do_setup_local"
+
+## Check hostname
+do_function "Check hostname" "do_check_hostname"
+
+## Setup chrony
+do_function "Setup chrony" "do_setup_chrony"
+
+## Setup NTP
+do_function "Setup NTP" "do_setup_ntp"
+
+## Setup firewall for Katello
+do_function "Setup firewall for Katello" "do_setup_firewall"
+
+## Clean previous disks
+do_function "Clean previous disks" "do_clean_disks"
+
+## Setup disk for pulp
+do_function "Setup disk for pulp" "do_setup_disks"
+
+## Update system
+do_task "Update system" "yum update -y"
+
+## Add repositories for Katello
+do_function "Add repositories for Katello" "do_add_repositories"
+
+## Install Katello package
+do_task "Install Katello package" "yum install katello -y"
+
+## Configure Katello installer
+do_function "Configure Katello installer" "do_config_katello"
+
+## Install Katello service
+do_function "Install Katello service" "do_install_katello \"$PASSWORD\""
+
+## Install VMWare Tools
+do_task "Install VMWare Tools" "yum install open-vm-tools -y"
+
+## Update system (again)
+do_task "Update system" "yum update -y"
+
+## Create Katello compute resource (vCenter)
+do_task "Create Katello compute resource (vCenter)" "hammer compute-resource create --organization-id 1 --location-id 2 --name \"Tanix vCenter\" --provider \"Vmware\" --server \"vcenter.tanix.nl\" --user \"administrator@tanix.local\" --password \"$PASSWORD\" --datacenter \"Datacenter\""
+
+## Update Katello compute profiles
+do_function "Update Katello compute profiles" "do_compute_profiles"
+
+## Create Katello subnet
+do_function "Create Katello subnet" "do_create_subnet"
+
+## Create Katello LCM environments
+do_function "Create Katello LCM environments" "do_lcm_setup"
+
+## Create Katello credential
+do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
+
+## Create Katello setup for CentOS 7.x
+do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"CentOS 7.x\""
+
+## Setup bootdisks to Katello
+do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
