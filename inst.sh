@@ -373,6 +373,7 @@ if [ "$(whoami)" != "root" ]; then
     exit
 fi
 
+if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -432,9 +433,10 @@ do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
 
 ## Create Katello setup for CentOS 7.x
 do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"7.x\""
+fi
 
 ## Create Katello setup for CentOS 7.x
-do_function "Create Katello setup for CentOS 7.6" "do_populate_katello \"7.x\""
+do_function "Create Katello setup for CentOS 7.6" "do_populate_katello \"7.6\""
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
