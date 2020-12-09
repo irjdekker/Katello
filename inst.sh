@@ -152,7 +152,6 @@ do_populate_katello() {
     local SYNC_TIME
     SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
 
-if false; then
     ## Create Katello product
     do_function_task "hammer product create --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\""
 
@@ -187,7 +186,6 @@ if false; then
     do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Extras x86_64\"" "3"
     do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Updates x86_64\"" "3"
     do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Ansible x86_64\"" "3"
-fi
     
     ## Create Katello content view
     do_function_task "hammer content-view create --organization-id 1 --name \"CentOS $OS_VERSION\" --label \"CentOS_$OS_NICE\""
@@ -239,6 +237,58 @@ do_register_katello() {
     do_function_task "curl --insecure --output katello-ca-consumer-latest.noarch.rpm https://katello.tanix.nl/pub/katello-ca-consumer-latest.noarch.rpm"
     do_function_task "yum localinstall katello-ca-consumer-latest.noarch.rpm -y"
     do_function_task "subscription-manager register --org=\"Tanix\" --activationkey=\"CentOS_7_x_Production_Key\""
+}
+
+do_create_host() {
+    local NAME
+    NAME="$1"
+    local HOSTGROUP
+    HOSTGROUP="$2"
+    local IP
+    IP="$3"
+    local PASSWORD
+    PASSWORD="$4"
+    local PROFILE
+    PROFILE="$5"    
+
+    if [ -n "$PROFILE" ]
+    then
+        compute_profile="$PROFILE"
+    else
+        compute_profile=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
+    fi
+    
+    compute_resource=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Compute Resource" | grep -i "compute resource" | cut -d ":" -f 2 | awk '{$1=$1};1')    
+    lifecycle_environment=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Lifecycle Environment/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')
+    partition_table=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Operating system/Partition Table" | grep -i "partition table" | cut -d ":" -f 2 | awk '{$1=$1};1')
+    domain=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Network/Domain" | grep -i "domain" | cut -d ":" -f 2 | awk '{$1=$1};1')
+    architecture=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Operating system/Architecture" | grep -i "architecture" | cut -d ":" -f 2 | awk '{$1=$1};1')
+    subnet=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Network/Subnet ipv4" | grep -i "subnet" | cut -d ":" -f 2 | awk '{$1=$1};1')
+    operating_system=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Operating system/Operating System" | grep -i "operating system" | cut -d ":" -f 2 | awk '{$1=$1};1')
+    content_view=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')    
+    attributes=$(hammer compute-profile info --name "$compute_profile" --fields "Compute attributes/VM attributes" | grep -i "vm attributes" | cut -d ":" -f 2 | awk '{$1=$1};1')
+   
+    hammer host create --name "$NAME" \
+    --organization "Tanix" \
+    --location "Home" \
+    --hostgroup "$HOSTGROUP" \
+    --compute-resource "$compute_resource" \
+    --compute-profile "$compute_profile" \
+    --lifecycle-environment "$lifecycle_environment" \
+    --partition-table "$partition_table" \
+    --domain "$domain" \
+    --architecture "$architecture" \
+    --kickstart-repository-id 29 \
+    --subnet "$subnet" \
+    --operatingsystem "$operating_system" \
+    --owner "admin" \
+    --compute-attributes "$attributes" \
+    --provision-method bootdisk \
+    --build 1 \
+    --managed 1 \
+    --comment "Build via script on $(date)" \
+    --root-password "$PASSWORD" \
+    --ip "$IP"   
 }
 
 print_padded_text() {
@@ -436,7 +486,6 @@ do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
 
 ## Create Katello setup for CentOS 7.x
 do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"7.x\""
-fi
 
 ## Create Katello setup for CentOS 7.x
 do_function "Create Katello setup for CentOS 7.6" "do_populate_katello \"7.6\""
@@ -449,7 +498,7 @@ do_function "Register katello host" "do_register_katello"
 
 # Change destroy setting
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
+fi
 
 # Create test host
-# do_task "Create test host" "hammer host create --organization-id 1 --location-id 2 --hostgroup \"hg_production_7_x\" --name \"test.tanix.nl\" --ip \"10.10.5.37\" --provision-method bootdisk --root-password \"$PASSWORD\"\ "
-
+do_function "Create test host" "do_create_host \"test\" \"hg_production_7_6\" \"10.10.5.37\" \"$PASSWORD\" \"1-Small\""
