@@ -207,20 +207,20 @@ do_populate_katello() {
         do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Test_Key\" --lifecycle-environment \"Test\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
         do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Acceptance_Key\" --lifecycle-environment \"Acceptance\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
         do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Production_Key\" --lifecycle-environment \"Production\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
-    fi
 
-    ## Assign activation keys to Katello subscription (current view)
-    local subscription_id
-    subscription_id=$(hammer subscription list | grep "CentOS $OS_VERSION Linux x86_64" | cut -d "|" -f 1 | awk '{$1=$1};1')
-    do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Development_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
-    do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Test_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
-    do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Acceptance_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
-    do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Production_Key\" --quantity \"1\" --subscription-id \"$subscription_id\"" 
+        ## Assign activation keys to Katello subscription (current view)
+        local subscription_id
+        subscription_id=$(hammer subscription list | grep "CentOS $OS_VERSION Linux x86_64" | cut -d "|" -f 1 | awk '{$1=$1};1')
+        do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Development_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
+        do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Test_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
+        do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Acceptance_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
+        do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Production_Key\" --quantity \"1\" --subscription-id \"$subscription_id\"" 
+    fi
 
     ## Create Katello hostgroup
     local domain_id
     domain_id=$(hammer domain list --organization-id 1 --location-id 2 | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
-    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_production_$OS_NICE\" --lifecycle-environment \"Production\" --content-view \"CentOS $OS_VERSION\" --content-source \"katello.tanix.nl\" --compute-resource \"Tanix vCenter\" --compute-profile \"1-Small\" --domain-id \"$domain_id\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS 7\" --partition-table \"Kickstart default\""
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_production_$OS_NICE\" --lifecycle-environment \"Production\" --content-view \"CentOS $OS_VERSION\" --content-source \"katello.tanix.nl\" --compute-resource \"Tanix vCenter\" --compute-profile \"1-Small\" --domain-id \"$domain_id\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS-7\" --partition-table \"Kickstart default\""
     do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_production_$OS_NICE\" --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_Production_Key\""    
 }
 
@@ -277,6 +277,7 @@ print_task() {
     printf "%b" "$PRINTTEXT"
 
     if (( STATUS >= 1 )); then
+        tput cvvis
         exit
     fi
 }
