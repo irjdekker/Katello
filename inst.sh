@@ -344,7 +344,7 @@ if [ "$(whoami)" != "root" ]; then
 fi
 
 ## Setup locale
-do_function "Setup locale" "do_setup_local"
+do_function "Setup locale" "do_setup_locale"
 
 ## Check hostname
 do_function "Check hostname" "do_check_hostname"
