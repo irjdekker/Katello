@@ -27,6 +27,7 @@ OSSETUP=('7.x,http://mirror.ams1.nl.leaseweb.net/centos/7/,os/x86_64/,extras/x86
 LOGFILE="$HOME/katello-install-$(date +%Y-%m-%d_%Hh%Mm).log"
 IRed='\e[0;31m'
 IGreen='\e[0;32m'
+IYellow='\e[0;33m'
 Reset='\e[0m'
 
 ## *************************************************************************************************** ##
@@ -260,7 +261,7 @@ print_task() {
     NEWLINE="$3"
 
     if (( STATUS == -3 )); then
-        PRINTTEXT="\r[ ${IRed}WARN${Reset} ] "
+        PRINTTEXT="\r[ ${IYellow}WARN${Reset} ] "
     elif (( STATUS == -2 )); then
         PRINTTEXT="\r         "
     elif (( STATUS == -1 )); then
