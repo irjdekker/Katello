@@ -359,7 +359,7 @@ do_function "Setup NTP" "do_setup_ntp"
 do_function "Setup firewall for Katello" "do_setup_firewall"
 
 ## Clean previous disks
-do_function "Clean previous disks" "do_clean_disks"
+# do_function "Clean previous disks" "do_clean_disks"
 
 ## Setup disk for pulp
 do_function "Setup disk for pulp" "do_setup_disks"
