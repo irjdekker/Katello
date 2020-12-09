@@ -265,6 +265,7 @@ do_create_host() {
     architecture=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Operating system/Architecture" | grep -i "architecture" | cut -d ":" -f 2 | awk '{$1=$1};1')
     subnet=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Network/Subnet ipv4" | grep -i "subnet" | cut -d ":" -f 2 | awk '{$1=$1};1')
     operating_system=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Operating system/Operating System" | grep -i "operating system" | cut -d ":" -f 2 | awk '{$1=$1};1')
+    operating_system_id=$(hammer os list | grep "$operating_system" | cut -d ":" -f 1 | awk '{$1=$1};1')
     content_view=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')    
     attributes=$(hammer compute-profile info --name "$compute_profile" --fields "Compute attributes/VM attributes" | grep -i "vm attributes" | cut -d ":" -f 2 | awk '{$1=$1};1')
    
@@ -280,7 +281,7 @@ do_create_host() {
     --architecture "$architecture" \
     --kickstart-repository-id 29 \
     --subnet "$subnet" \
-    --operatingsystem "$operating_system" \
+    --operatingsystem-id "$operating_system_id" \
     --owner "admin" \
     --compute-attributes "$attributes" \
     --provision-method bootdisk \
