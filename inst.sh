@@ -315,6 +315,8 @@ do_function_task_retry() {
             if (( COUNT == RETRY )); then
                 print_task "$MESSAGE" 1 true
             fi
+        else
+            break
         fi
     done
 }
