@@ -150,66 +150,68 @@ do_populate_katello() {
     local SYNC_TIME
     SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
 
-    ## Create Katello product
-    do_function_task "hammer product create --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\""
+    if [ false ] ; then
+        ## Create Katello product
+        do_function_task "hammer product create --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\""
 
-    ## Create Katello repositories
-    for item in "${OSSETUP[@]}"
-    do
-        if [[ "$item" == *","* ]]
-        then
-            IFS=',' read -ra tmpArray <<< "$item"
-            tmpOS=${tmpArray[0]}
-            tmpBaseUrl=${tmpArray[1]}
-            tmpBaseOS=${tmpArray[2]}
-            tmpBaseExtras=${tmpArray[3]}
-            tmpBaseUpdates=${tmpArray[4]}
-            tmpBaseAnsible=${tmpArray[5]}
-            
-            if [[ "$OS_VERSION" == "$tmpOS" ]] ; then
-                do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION OS x86_64\" --label \"CentOS_${OS_NICE}_OS_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseOS\" --mirror-on-sync \"no\""
-                do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Extras x86_64\" --label \"CentOS_${OS_NICE}_Extras_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseExtras\" --mirror-on-sync \"no\""
-                do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Updates x86_64\" --label \"CentOS_${OS_NICE}_Updates_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseUpdates\" --mirror-on-sync \"no\""
-                do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Ansible x86_64\" --label \"CentOS_${OS_NICE}_Ansible_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseAnsible\" --mirror-on-sync \"no\""                
-            fi
-        fi    
-    done
+        ## Create Katello repositories
+        for item in "${OSSETUP[@]}"
+        do
+            if [[ "$item" == *","* ]]
+            then
+                IFS=',' read -ra tmpArray <<< "$item"
+                tmpOS=${tmpArray[0]}
+                tmpBaseUrl=${tmpArray[1]}
+                tmpBaseOS=${tmpArray[2]}
+                tmpBaseExtras=${tmpArray[3]}
+                tmpBaseUpdates=${tmpArray[4]}
+                tmpBaseAnsible=${tmpArray[5]}
+                
+                if [[ "$OS_VERSION" == "$tmpOS" ]] ; then
+                    do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION OS x86_64\" --label \"CentOS_${OS_NICE}_OS_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseOS\" --mirror-on-sync \"no\""
+                    do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Extras x86_64\" --label \"CentOS_${OS_NICE}_Extras_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseExtras\" --mirror-on-sync \"no\""
+                    do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Updates x86_64\" --label \"CentOS_${OS_NICE}_Updates_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseUpdates\" --mirror-on-sync \"no\""
+                    do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Ansible x86_64\" --label \"CentOS_${OS_NICE}_Ansible_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseAnsible\" --mirror-on-sync \"no\""                
+                fi
+            fi    
+        done
 
-    ## Create Katello synchronization plan
-    do_function_task "hammer sync-plan create --organization-id 1 --name \"Daily Sync CentOS $OS_VERSION\" --interval daily --enabled true --sync-date \"2020-01-01 $SYNC_TIME\""
-    do_function_task "hammer product set-sync-plan --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\" --sync-plan \"Daily Sync CentOS $OS_VERSION\""
+        ## Create Katello synchronization plan
+        do_function_task "hammer sync-plan create --organization-id 1 --name \"Daily Sync CentOS $OS_VERSION\" --interval daily --enabled true --sync-date \"2020-01-01 $SYNC_TIME\""
+        do_function_task "hammer product set-sync-plan --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\" --sync-plan \"Daily Sync CentOS $OS_VERSION\""
 
-    ## Synchronize Katello repositories   
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION OS x86_64\"" "3"
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Extras x86_64\"" "3"
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Updates x86_64\"" "3"
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Ansible x86_64\"" "3"
-    
-    ## Create Katello content view
-    do_function_task "hammer content-view create --organization-id 1 --name \"CentOS $OS_VERSION\" --label \"CentOS_$OS_NICE\""
-    
-    ## Add repositories to content view
-    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION OS x86_64\""
-    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Extras x86_64\""
-    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Updates x86_64\""
-    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Ansible x86_64\""
+        ## Synchronize Katello repositories   
+        do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION OS x86_64\"" "3"
+        do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Extras x86_64\"" "3"
+        do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Updates x86_64\"" "3"
+        do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Ansible x86_64\"" "3"
+        
+        ## Create Katello content view
+        do_function_task "hammer content-view create --organization-id 1 --name \"CentOS $OS_VERSION\" --label \"CentOS_$OS_NICE\""
+        
+        ## Add repositories to content view
+        do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION OS x86_64\""
+        do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Extras x86_64\""
+        do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Updates x86_64\""
+        do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Ansible x86_64\""
 
-    ## Publish and promote content view
-    do_function_task "hammer content-view publish --organization-id 1 --name \"CentOS $OS_VERSION\" --description \"Initial publishing\""
-    do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Development\""
-    do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Test\""
-    do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Acceptance\""
-    do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Production\""
-    
-    ## Create Katello activation keys
-    do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Development_Key\" --lifecycle-environment \"Development\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
-    do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Test_Key\" --lifecycle-environment \"Test\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
-    do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Acceptance_Key\" --lifecycle-environment \"Acceptance\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
-    do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Production_Key\" --lifecycle-environment \"Production\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
+        ## Publish and promote content view
+        do_function_task "hammer content-view publish --organization-id 1 --name \"CentOS $OS_VERSION\" --description \"Initial publishing\""
+        do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Development\""
+        do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Test\""
+        do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Acceptance\""
+        do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS $OS_VERSION\" --version \"1.0\" --to-lifecycle-environment \"Production\""
+        
+        ## Create Katello activation keys
+        do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Development_Key\" --lifecycle-environment \"Development\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
+        do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Test_Key\" --lifecycle-environment \"Test\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
+        do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Acceptance_Key\" --lifecycle-environment \"Acceptance\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
+        do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_Production_Key\" --lifecycle-environment \"Production\" --content-view \"CentOS $OS_VERSION\" --unlimited-hosts"
+    fi
 
     ## Assign activation keys to Katello subscription (current view)
     local subscription_id
-    subscription_id=$(hammer subscription list | grep "CentOS $OS_VERSION Linux x86_64" | cut -d "|" -f 1 | awk "{$1=$1};1")
+    subscription_id=$(hammer subscription list | grep "CentOS $OS_VERSION Linux x86_64" | cut -d "|" -f 1 | awk '{$1=$1};1')
     do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Development_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
     do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Test_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
     do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Acceptance_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""
