@@ -3,12 +3,12 @@
 ## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/inst.sh 2>/dev/null | bash -s <password>
 
 ## Exit when any command fails
-set -e
+# set -e
 
 ## Keep track of the last executed command
-trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
+# trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 ## Echo an error message before exiting
-trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
+# trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 
 ## *************************************************************************************************** ##
 ##      __      __     _____  _____          ____  _      ______  _____                                ##
@@ -22,8 +22,8 @@ trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 ##
 ## The following variables are defined below
 
-OSSETUP=('CentOS 7.x,http://mirror.ams1.nl.leaseweb.net/centos/7/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
-'CentOS 7.6,http://mirror.leaseweb.com/centos-vault/7.6.1810/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible27/')
+OSSETUP=('7.x,http://mirror.ams1.nl.leaseweb.net/centos/7/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
+'7.6,http://mirror.leaseweb.com/centos-vault/7.6.1810/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible27/')
 LOGFILE="$HOME/katello-install-$(date +%Y-%m-%d_%Hh%Mm).log"
 IRed='\e[0;31m'
 IGreen='\e[0;32m'
@@ -156,7 +156,7 @@ do_populate_katello() {
     ## Create Katello repositories
     for item in "${OSSETUP[@]}"
     do
-        if [[ $item == *","* ]]
+        if [[ "$item" == *","* ]]
         then
             IFS=',' read -ra tmpArray <<< "$item"
             tmpOS=${tmpArray[0]}
@@ -166,7 +166,7 @@ do_populate_katello() {
             tmpBaseUpdates=${tmpArray[4]}
             tmpBaseAnsible=${tmpArray[5]}
             
-            if (( OS_VERSION == tmpOS )) ; then
+            if [[ "$OS_VERSION" == "$tmpOS" ]] ; then
                 do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION OS x86_64\" --label \"CentOS_${OS_NICE}_OS_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseOS\" --mirror-on-sync \"no\""
                 do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Extras x86_64\" --label \"CentOS_${OS_NICE}_Extras_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseExtras\" --mirror-on-sync \"no\""
                 do_function_task "hammer repository create --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Updates x86_64\" --label \"CentOS_${OS_NICE}_Updates_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"$tmpBaseUrl$tmpBaseUpdates\" --mirror-on-sync \"no\""
@@ -176,8 +176,8 @@ do_populate_katello() {
     done
 
     ## Create Katello synchronization plan
-    do_function_task "hammer sync-plan create --organization-id 1 --name \"Daily Sync $OS_VERSION\" --interval daily --enabled true --sync-date \"2020-01-01 $SYNC_TIME\""
-    do_function_task "hammer product set-sync-plan --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\" --sync-plan \"Daily Sync $OS_VERSION\""
+    do_function_task "hammer sync-plan create --organization-id 1 --name \"Daily Sync CentOS $OS_VERSION\" --interval daily --enabled true --sync-date \"2020-01-01 $SYNC_TIME\""
+    do_function_task "hammer product set-sync-plan --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\" --sync-plan \"Daily Sync CentOS $OS_VERSION\""
 
     ## Synchronize Katello repositories   
     do_function_task "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION OS x86_64\""
@@ -344,64 +344,64 @@ if [ "$(whoami)" != "root" ]; then
 fi
 
 ## Setup locale
-do_function "Setup locale" "do_setup_locale"
+# do_function "Setup locale" "do_setup_locale"
 
 ## Check hostname
-do_function "Check hostname" "do_check_hostname"
+# do_function "Check hostname" "do_check_hostname"
 
 ## Setup chrony
-do_function "Setup chrony" "do_setup_chrony"
+# do_function "Setup chrony" "do_setup_chrony"
 
 ## Setup NTP
-do_function "Setup NTP" "do_setup_ntp"
+# do_function "Setup NTP" "do_setup_ntp"
 
 ## Setup firewall for Katello
-do_function "Setup firewall for Katello" "do_setup_firewall"
+# do_function "Setup firewall for Katello" "do_setup_firewall"
 
 ## Clean previous disks
 # do_function "Clean previous disks" "do_clean_disks"
 
 ## Setup disk for pulp
-do_function "Setup disk for pulp" "do_setup_disks"
+# do_function "Setup disk for pulp" "do_setup_disks"
 
 ## Update system
-do_task "Update system" "yum update -y"
+# do_task "Update system" "yum update -y"
 
 ## Add repositories for Katello
-do_function "Add repositories for Katello" "do_add_repositories"
+# do_function "Add repositories for Katello" "do_add_repositories"
 
 ## Install Katello package
-do_task "Install Katello package" "yum install katello -y"
+# do_task "Install Katello package" "yum install katello -y"
 
 ## Configure Katello installer
-do_function "Configure Katello installer" "do_config_katello"
+# do_function "Configure Katello installer" "do_config_katello"
 
 ## Install Katello service
-do_function "Install Katello service" "do_install_katello \"$PASSWORD\""
+# do_function "Install Katello service" "do_install_katello \"$PASSWORD\""
 
 ## Install VMWare Tools
-do_task "Install VMWare Tools" "yum install open-vm-tools -y"
+# do_task "Install VMWare Tools" "yum install open-vm-tools -y"
 
 ## Update system (again)
-do_task "Update system" "yum update -y"
+# do_task "Update system" "yum update -y"
 
 ## Create Katello compute resource (vCenter)
-do_task "Create Katello compute resource (vCenter)" "hammer compute-resource create --organization-id 1 --location-id 2 --name \"Tanix vCenter\" --provider \"Vmware\" --server \"vcenter.tanix.nl\" --user \"administrator@tanix.local\" --password \"$PASSWORD\" --datacenter \"Datacenter\""
+# do_task "Create Katello compute resource (vCenter)" "hammer compute-resource create --organization-id 1 --location-id 2 --name \"Tanix vCenter\" --provider \"Vmware\" --server \"vcenter.tanix.nl\" --user \"administrator@tanix.local\" --password \"$PASSWORD\" --datacenter \"Datacenter\""
 
 ## Update Katello compute profiles
-do_function "Update Katello compute profiles" "do_compute_profiles"
+# do_function "Update Katello compute profiles" "do_compute_profiles"
 
 ## Create Katello subnet
-do_function "Create Katello subnet" "do_create_subnet"
+# do_function "Create Katello subnet" "do_create_subnet"
 
 ## Create Katello LCM environments
-do_function "Create Katello LCM environments" "do_lcm_setup"
+# do_function "Create Katello LCM environments" "do_lcm_setup"
 
 ## Create Katello credential
-do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
+# do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
 
 ## Create Katello setup for CentOS 7.x
-do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"CentOS 7.x\""
+do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"7.x\""
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
