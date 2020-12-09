@@ -441,3 +441,10 @@ do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
 
 # Register katello host
 do_function "Register katello host" "do_register_katello"
+
+# Change destroy setting
+do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
+
+# Create test host
+# do_task "Create test host" "hammer host create --organization-id 1 --location-id 2 --hostgroup \"hg_production_7_x\" --name \"test.tanix.nl\" --ip \"10.10.5.37\" --provision-method bootdisk --root-password \"$PASSWORD\"\ "
+
