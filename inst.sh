@@ -150,7 +150,7 @@ do_populate_katello() {
     local SYNC_TIME
     SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
 
-    if [ false ] ; then
+    if false ; then
         ## Create Katello product
         do_function_task "hammer product create --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\""
 
