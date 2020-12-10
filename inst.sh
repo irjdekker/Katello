@@ -281,6 +281,7 @@ do_create_host() {
     --architecture "$architecture" \
     --kickstart-repository-id 29 \
     --subnet "$subnet" \
+    --operatingsystem-id 2 \
     --owner-type "User" \
     --owner "admin" \
     --compute-attributes "$attributes" \
