@@ -267,8 +267,10 @@ do_create_host() {
     operating_system=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Operating system/Operating System" | grep -i "operating system" | cut -d ":" -f 2 | awk '{$1=$1};1')
     operating_system_id=$(hammer os list | grep "$operating_system" | cut -d ":" -f 1 | awk '{$1=$1};1')
     content_view=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')    
-    attributes=$(hammer compute-profile info --name "$compute_profile" --fields "Compute attributes/VM attributes" | grep -i "vm attributes" | cut -d ":" -f 2 | awk '{$1=$1};1')
-   
+    compute_attributes=$(hammer --output json compute-profile info --name "$compute_profile" --fields "Compute attributes/VM attributes"  | python3 -c "import sys, json; print(json.load(sys.stdin)['Compute attributes']['1']['VM attributes'])")   
+    interface_attributes=$(hammer --output json compute-profile info --name "$compute_profile" --fields "Compute attributes/VM attributes" | python3 -c "import sys, json; print(json.load(sys.stdin)['Compute attributes']['1']['VM attributes']['interfaces_attributes'])")    
+    volume_attributes=$(hammer --output json compute-profile info --name "$compute_profile" --fields "Compute attributes/VM attributes" | python3 -c "import sys, json; print(json.load(sys.stdin)['Compute attributes']['1']['VM attributes']['volumes_attributes'])")
+
     hammer host create --name "$NAME" \
     --organization "Tanix" \
     --location "Home" \
@@ -289,12 +291,10 @@ do_create_host() {
     --root-password "$PASSWORD" \
     --ip "$IP" \
     --operatingsystem-id 2 \    
-    --kickstart-repository-id 29 \    
-    --interface="identifier=\"eth0\",primary=true,provision=true,managed=true,virtual=false,type=\"Nic::Managed\",compute_type=\"VirtualVmxnet3\",ip=10.10.5.37,subnet_id=1,compute_network=\"tanix-5\"" \
-    --compute-attributes="cluster=\"Cluster\",cpus=1,corespersocket=1,path=\"/Datacenters/Datacenter/vm\",memory_mb=2048,guest_id=centos64Guest,start=1,hardware_version=vmx-10,scsi_controller_type=\"ParaVirtualSCSIController\",memoryHotAddEnabled=1,cpuHotAddEnabled=1" \
-    --volume={"0"=>{"datastore"=>"Datastore Non-SSD", "size_gb"=>"30", "thin"=>"true"}}
-
-#    --compute-attributes "$attributes" \    
+    --kickstart-repository-id 29 \
+    --compute-attributes="$compute_attributes" \   
+    --volume="$volume_attributes" \    
+    --interface="$interface_attributes" 
 }
 
 print_padded_text() {
