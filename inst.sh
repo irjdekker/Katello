@@ -383,8 +383,6 @@ do_function() {
 ##                                                                                                     ##
 ## *************************************************************************************************** ##
 
-tput civis
-
 ## Check if password is specified
 if [[ $# -eq 0 ]]
 then
@@ -400,7 +398,9 @@ if [ "$(whoami)" != "root" ]; then
     exit
 fi
 
-if false; then
+# Hide cursor
+tput civis
+
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -459,7 +459,7 @@ do_function "Create Katello LCM environments" "do_lcm_setup"
 do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
 
 ## Create Katello setup for CentOS 7.x
-do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"7.x\""
+# do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"7.x\""
 
 ## Create Katello setup for CentOS 7.x
 do_function "Create Katello setup for CentOS 7.6" "do_populate_katello \"7.6\""
@@ -472,7 +472,9 @@ do_function "Register katello host" "do_register_katello"
 
 # Change destroy setting
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
-fi
 
 # Create test host
 do_function "Create test host" "do_create_host \"test\" \"hg_production_7_6\" \"10.10.5.37\" \"$PASSWORD\" \"1-Small\""
+
+# Restore cursor
+tput cvvis
