@@ -259,7 +259,9 @@ do_create_host() {
     fi
     
     content_view=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    repository=$(hammer content-view info --organization-id 1 --name "CentOS 7.6" --fields "Yum Repositories/Label" | grep "_OS_" | cut -d ":" -f 2 | awk '{$1=$1};1')
+    repository=$(hammer content-view info --organization-id 1 --name "$content_view" --fields "Yum Repositories/Label" | grep "_OS_" | cut -d ":" -f 2 | awk '{$1=$1};1')
+
+    echo "hammer host create --name \"$NAME\" --organization \"Tanix\" --location \"Home\" --hostgroup \"$HOSTGROUP\" --compute-profile \"$compute_profile\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository \"$repository\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"$PASSWORD\" --ip \"$IP\" --compute-attributes=\"start=1\""
 
     hammer host create --name "$NAME" \
     --organization "Tanix" \
