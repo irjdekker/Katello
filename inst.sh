@@ -292,7 +292,7 @@ do_create_host() {
     --ip "$IP" \
     --operatingsystem-id 2 \
     --kickstart-repository-id 29 \
-    --interface="identifier=\"eth0\",primary=true,provision=true,managed=true,virtual=false,type=\"Nic::Managed\",compute_type=\"VirtualVmxnet3\",ip=10.10.5.37,subnet_id=1,compute_network=\"tanix-5\"" \
+    --interface "$interface_attributes" \
     --compute-attributes="cluster=\"Cluster\",cpus=1,corespersocket=1,path=\"/Datacenters/Datacenter/vm\",memory_mb=2048,guest_id=centos64Guest,start=1,hardware_version=vmx-10,scsi_controller_type=\"ParaVirtualSCSIController\",memoryHotAddEnabled=1,cpuHotAddEnabled=1" \
     --volume="datastore=\"Datastore Non-SSD\",name='\''Harddisk'\'',size_gb=30,thin=true,eager_zero=false"
 
