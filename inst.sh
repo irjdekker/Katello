@@ -468,7 +468,7 @@ do_function "Create Katello setup for CentOS 7.6" "do_populate_katello \"7.6\""
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
 
 # Register katello host
-do_function "Register katello host" "do_register_katello"
+# do_function "Register katello host" "do_register_katello"
 
 # Change destroy setting
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
