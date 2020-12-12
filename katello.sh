@@ -1,6 +1,6 @@
 #!/bin/bash
 ## The easiest way to get the script on your machine is:
-## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/inst.sh 2>/dev/null | bash -s <password>
+## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null | bash -s <password>
 
 ## Exit when any command fails
 # set -e
