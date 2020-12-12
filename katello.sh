@@ -182,10 +182,10 @@ do_populate_katello() {
     do_function_task "hammer product set-sync-plan --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\" --sync-plan \"Daily Sync CentOS $OS_VERSION\""
 
     ## Synchronize Katello repositories
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION OS x86_64\"" "3"
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Extras x86_64\"" "3"
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Updates x86_64\"" "3"
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Ansible x86_64\"" "3"
+    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION OS x86_64\"" "5"
+    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Extras x86_64\"" "5"
+    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Updates x86_64\"" "5"
+    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS $OS_VERSION Linux x86_64\" --name \"CentOS $OS_VERSION Ansible x86_64\"" "5"
 
     ## Create Katello content view
     do_function_task "hammer content-view create --organization-id 1 --name \"CentOS $OS_VERSION\" --label \"CentOS_$OS_NICE\""
