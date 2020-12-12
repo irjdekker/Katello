@@ -118,9 +118,9 @@ do_compute_profiles() {
     local network_id
     network_id=$(hammer compute-resource networks --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '6q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
 
-    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"1-Small\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 --volume datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
-    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"2-Medium\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=2,memory_mb=2048,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 --volume datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
-    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"3-Large\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=2,memory_mb=4096,cluster=$cluster,memoryHotAddEnabled=1,cpuHotAddEnabled=1 --volume datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
+    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"1-Small\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,cluster=$cluster,path=\"/Datacenters/Datacenter/vm\",memoryHotAddEnabled=1,cpuHotAddEnabled=1 --volume datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
+    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"2-Medium\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=2,memory_mb=2048,cluster=$cluster,path=\"/Datacenters/Datacenter/vm\",memoryHotAddEnabled=1,cpuHotAddEnabled=1 --volume datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
+    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"3-Large\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=2,memory_mb=4096,cluster=$cluster,path=\"/Datacenters/Datacenter/vm\",memoryHotAddEnabled=1,cpuHotAddEnabled=1 --volume datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
 }
 
 do_create_subnet() {
@@ -257,49 +257,25 @@ do_create_host() {
     else
         compute_profile=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
     fi
-
-    compute_resource=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Compute Resource" | grep -i "compute resource" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    lifecycle_environment=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Lifecycle Environment/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    partition_table=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Operating system/Partition Table" | grep -i "partition table" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    domain=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Network/Domain" | grep -i "domain" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    architecture=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Operating system/Architecture" | grep -i "architecture" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    subnet=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Network/Subnet ipv4" | grep -i "subnet" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    operating_system=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Operating system/Operating System" | grep -i "operating system" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    operating_system_id=$(hammer os list | grep "$operating_system" | cut -d ":" -f 1 | awk '{$1=$1};1')
+    
     content_view=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    compute_attributes=$(hammer --output json compute-profile info --name "$compute_profile" --fields "Compute attributes/VM attributes"  | python3 -c "import sys, json; print(json.load(sys.stdin)['Compute attributes']['1']['VM attributes'])")
-    interface_attributes=$(hammer --output json compute-profile info --name "$compute_profile" --fields "Compute attributes/VM attributes" | python3 -c "import sys, json; print(json.load(sys.stdin)['Compute attributes']['1']['VM attributes']['interfaces_attributes'])")
-    volume_attributes=$(hammer --output json compute-profile info --name "$compute_profile" --fields "Compute attributes/VM attributes" | python3 -c "import sys, json; print(json.load(sys.stdin)['Compute attributes']['1']['VM attributes']['volumes_attributes'])")
+    repository=$(hammer content-view info --organization-id 1 --name "CentOS 7.6" --fields "Yum Repositories/Label" | grep "_OS_" | cut -d ":" -f 2 | awk '{$1=$1};1')
 
     hammer host create --name "$NAME" \
     --organization "Tanix" \
     --location "Home" \
     --hostgroup "$HOSTGROUP" \
-    --compute-resource "$compute_resource" \
     --compute-profile "$compute_profile" \
-    --lifecycle-environment "$lifecycle_environment" \
-    --partition-table "$partition_table" \
-    --domain "$domain" \
-    --architecture "$architecture" \
-    --subnet "$subnet" \
     --owner-type "User" \
     --owner "admin" \
     --provision-method bootdisk \
+    --kickstart-repository "$repository" \   
     --build 1 \
     --managed 1 \
     --comment "Build via script on $(date)" \
     --root-password "$PASSWORD" \
     --ip "$IP" \
-    --operatingsystem-id 2 \
-    --kickstart-repository-id 29 \
-    --interface "$interface_attributes" \
-    --compute-attributes="cluster=\"Cluster\",cpus=1,corespersocket=1,path=\"/Datacenters/Datacenter/vm\",memory_mb=2048,guest_id=centos64Guest,start=1,hardware_version=vmx-10,scsi_controller_type=\"ParaVirtualSCSIController\",memoryHotAddEnabled=1,cpuHotAddEnabled=1" \
-    --volume="datastore=\"Datastore Non-SSD\",name='\''Harddisk'\'',size_gb=30,thin=true,eager_zero=false"
-
-
-#    --compute-attributes="$compute_attributes" \
-#    --volume="$volume_attributes" \
-#    --interface="$interface_attributes"
+    --compute-attributes="start=1"
 }
 
 print_padded_text() {
