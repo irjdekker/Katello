@@ -262,9 +262,7 @@ do_create_host() {
     repository=$(hammer content-view info --organization-id 1 --name "$content_view" --fields "Yum Repositories/Name" | grep " OS " | cut -d ":" -f 2 | awk '{$1=$1};1')
     repository_id=$(hammer repository list | grep "$repository" | cut -d "|" -f 1 | awk '{$1=$1};1')
 
-    local COMMAND
-    COMMAND="hammer host create --name \"$NAME\" --organization \"Tanix\" --location \"Home\" --hostgroup \"$HOSTGROUP\" --compute-profile \"$compute_profile\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"$repository_id\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"$PASSWORD\" --ip \"$IP\" --compute-attributes \"start=1\""
-    eval $COMMAND
+    do_function_task "hammer host create --name \"$NAME\" --organization \"Tanix\" --location \"Home\" --hostgroup \"$HOSTGROUP\" --compute-profile \"$compute_profile\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"$repository_id\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"$PASSWORD\" --ip \"$IP\" --compute-attributes \"start=1\""
 }
 
 print_padded_text() {
