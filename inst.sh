@@ -257,7 +257,7 @@ do_create_host() {
     else
         compute_profile=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
     fi
-    
+
     content_view=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')
     repository=$(hammer content-view info --organization-id 1 --name "$content_view" --fields "Yum Repositories/Name" | grep " OS " | cut -d ":" -f 2 | awk '{$1=$1};1')
     repository_id=$(hammer repository list | grep "$repository" | cut -d "|" -f 1 | awk '{$1=$1};1')
@@ -346,8 +346,9 @@ do_function_task_retry() {
     while :
     do
         if ! run_cmd "$1"; then
-            print_task "$MESSAGE" -3 false
             COUNT=$(( COUNT + 1 ))
+            print_task "$MESSAGE ($COUNT)" -3 false
+            sleep 60
             if (( COUNT == RETRY )); then
                 print_task "$MESSAGE" 1 true
             fi
