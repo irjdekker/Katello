@@ -353,6 +353,7 @@ do_function_task_retry() {
                 print_task "$MESSAGE" 1 true
             fi
         else
+            print_task "$MESSAGE" -1 false
             break
         fi
     done
