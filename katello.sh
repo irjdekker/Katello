@@ -172,7 +172,6 @@ do_populate_katello() {
     local SYNC_TIME
     SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
 
-if false; then
     ## Create Katello product
     do_function_task "hammer product create --organization-id 1 --name \"CentOS $OS_VERSION Linux x86_64\""
 
@@ -216,7 +215,6 @@ if false; then
     do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Extras x86_64\""
     do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Updates x86_64\""
     do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Ansible x86_64\""
-fi
     do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"Katello Client 7\" --repository \"Katello Client 7\""
 
     ## Publish and promote content view
@@ -258,10 +256,10 @@ do_setup_bootdisks() {
 
 do_create_templates() {
     do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_packages"
-    do_function_task "hammer template create --name \"Kickstart default custom packages\" --organization-id 1 --location-id 2 --locked 0 --file /tmp/Kickstart_default_custom_packages"
+    do_function_task "hammer template create --name \"Kickstart default custom packages\" --organization-id 1 --location-id 2 --type snippet --locked 0 --file /tmp/Kickstart_default_custom_packages"
     do_function_task "hammer --no-headers os list --fields Id | while read item; do hammer template update --name \"Kickstart default custom packages\" --operatingsystem-ids $item; done"
     do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_post"
-    do_function_task "hammer template create --name \"Kickstart default custom post\" --organization-id 1 --location-id 2 --locked 0 --file /tmp/Kickstart_default_custom_post"
+    do_function_task "hammer template create --name \"Kickstart default custom post\" --organization-id 1 --location-id 2 --type snippet --locked 0 --file /tmp/Kickstart_default_custom_post"
     do_function_task "hammer --no-headers os list --fields Id | while read item; do hammer template update --name \"Kickstart default custom post\" --operatingsystem-ids $item; done"
 }
 
@@ -495,7 +493,6 @@ do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
 
 ## Create Katello setup for Katello Client 7
 do_function "Create Katello setup for Katello Client 7" "do_populate_katello_client"
-fi
 
 ## Create Katello setup for CentOS 7.x
 do_function "Create Katello setup for CentOS 7.6" "do_populate_katello \"7.6\""
@@ -505,6 +502,7 @@ do_function "Create Katello setup for CentOS 7.6" "do_populate_katello \"7.6\""
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
+fi
 
 ## Create templates for Katello deployment
 do_function "Create templates for Katello deployment" "do_create_templates"
