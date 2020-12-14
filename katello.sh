@@ -441,6 +441,7 @@ fi
 # Hide cursor
 tput civis
 
+if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -509,6 +510,7 @@ do_function "Create Katello setup for CentOS 7.8" "do_populate_katello \"7.8\""
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
+fi
 
 ## Create templates for Katello deployment
 do_function "Create templates for Katello deployment" "do_create_templates"
