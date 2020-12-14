@@ -217,7 +217,7 @@ if false; then
     do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Updates x86_64\""
     do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Ansible x86_64\""
 fi
-    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"Katello Client 7\""
+    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"Katello Client 7\" --repository \"Katello Client 7\""
 
     ## Publish and promote content view
     do_function_task "hammer content-view publish --organization-id 1 --name \"CentOS $OS_VERSION\" --description \"Initial publishing\""
@@ -492,10 +492,10 @@ do_function "Create Katello LCM environments" "do_lcm_setup"
 
 ## Create Katello credential
 do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
-fi
 
 ## Create Katello setup for Katello Client 7
 do_function "Create Katello setup for Katello Client 7" "do_populate_katello_client"
+fi
 
 ## Create Katello setup for CentOS 7.x
 do_function "Create Katello setup for CentOS 7.6" "do_populate_katello \"7.6\""
