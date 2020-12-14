@@ -135,6 +135,8 @@ do_centos7_credential() {
     do_function_task "cd /etc/pki/rpm-gpg/import/"
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://mirror.ams1.nl.leaseweb.net/centos/7/os/x86_64/RPM-GPG-KEY-CentOS-7"
     do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-7\" --name \"RPM-GPG-KEY-CentOS-7\""
+    do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://yum.theforeman.org/releases/2.2/RPM-GPG-KEY-foreman"
+    do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-foreman\" --name \"RPM-GPG-KEY-foreman\""    
 }
 
 do_lcm_setup() {
@@ -142,6 +144,24 @@ do_lcm_setup() {
     do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Test\" --label \"Test\" --prior \"Development\""
     do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Acceptance\" --label \"Acceptance\" --prior \"Test\""
     do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Production\" --label \"Production\" --prior \"Acceptance\""
+}
+
+do_populate_katello_client() {
+    local SYNC_TIME
+    SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
+
+    ## Create Katello client product
+    do_function_task "hammer product create --organization-id 1 --name \"Katello Client 7\""
+
+    ## Create Katello client repositories
+    do_function_task "hammer repository create --organization-id 1 --product \"Katello Client 7\" --name \"Katello Client 7\" --label \"Katello_Client_7\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-foreman\" --url \"https://yum.theforeman.org/client/2.2/el7/x86_64/\" --mirror-on-sync \"no\""
+
+    ## Create Katello client synchronization plan
+    do_function_task "hammer sync-plan create --organization-id 1 --name \"Daily Sync Katello Client 7\" --interval daily --enabled true --sync-date \"2020-01-01 $SYNC_TIME\""
+    do_function_task "hammer product set-sync-plan --organization-id 1 --name \"Katello Client 7\" --sync-plan \"Daily Sync Katello Client 7\""
+
+    ## Synchronize Katello client repositories
+    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"Katello Client 7\" --name \"Katello Client 7\"" "5"
 }
 
 do_populate_katello() {
@@ -195,6 +215,7 @@ do_populate_katello() {
     do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Extras x86_64\""
     do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Updates x86_64\""
     do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"CentOS $OS_VERSION Ansible x86_64\""
+    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS $OS_VERSION\" --product \"CentOS $OS_VERSION Linux x86_64\" --repository \"Katello Client 7\""
 
     ## Publish and promote content view
     do_function_task "hammer content-view publish --organization-id 1 --name \"CentOS $OS_VERSION\" --description \"Initial publishing\""
@@ -231,6 +252,15 @@ do_setup_bootdisks() {
     do_function_task "yum install grub2-efi-x64 -y"
     do_function_task "/usr/bin/cp -f /boot/efi/EFI/centos/grubx64.efi /var/lib/foreman/bootdisk/grubx64.efi"
     do_function_task "chmod 744 /var/lib/foreman/bootdisk/*.efi"
+}
+
+do_create_templates() {
+    do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_packages"
+    do_function_task "hammer template create --name \"Kickstart default custom packages\" --organization-id 1 --location-id 2 --locked 0 --file /tmp/Kickstart_default_custom_packages"
+    do_function_task "hammer --no-headers os list --fields Id | while read item; do hammer template update --name \"Kickstart default custom packages\" --operatingsystem-ids $item; done"
+    do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_post"
+    do_function_task "hammer template create --name \"Kickstart default custom post\" --organization-id 1 --location-id 2 --locked 0 --file /tmp/Kickstart_default_custom_post"
+    do_function_task "hammer --no-headers os list --fields Id | while read item; do hammer template update --name \"Kickstart default custom post\" --operatingsystem-ids $item; done"
 }
 
 do_register_katello() {
@@ -468,6 +498,9 @@ do_function "Create Katello setup for CentOS 7.6" "do_populate_katello \"7.6\""
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
+
+## Create templates for Katello deployment
+do_function "Create templates for Katello deployment" "do_create_templates"
 
 # Register katello host
 # do_function "Register katello host" "do_register_katello"

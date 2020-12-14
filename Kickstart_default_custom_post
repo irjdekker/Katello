@@ -1,0 +1,18 @@
+<%#
+kind: snippet
+name: Kickstart default custom post
+model: ProvisioningTemplate
+snippet: true
+%>
+<%#
+# Custom post Snippet
+#
+# General parameters:
+#
+#   yum-config-manager-disable-repo = [true|false]  Disable all default repositories.
+#
+%>
+
+<% if host_param_true?('yum-config-manager-disable-repo') -%>
+    yum-config-manager --disable \*
+<% end %>
