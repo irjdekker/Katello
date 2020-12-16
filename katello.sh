@@ -145,6 +145,27 @@ do_lcm_setup() {
     do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Test\" --label \"Test\" --prior \"Development\""
     do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Acceptance\" --label \"Acceptance\" --prior \"Test\""
     do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Production\" --label \"Production\" --prior \"Acceptance\""
+    
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_development\" --lifecycle-environment \"Development\" --compute-profile \"1-Small\" --architecture \"x86_64\" --partition-table \"Kickstart default\""
+    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_development\" --name \"yum-config-manager-disable-repo\" --parameter-type boolean --value \"true\""
+    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_development\" --name \"enable-epel\" --parameter-type boolean --value \"false\""
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_test\" --lifecycle-environment \"Test\" --compute-profile \"1-Small\" --architecture \"x86_64\" --partition-table \"Kickstart default\""
+    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_test\" --name \"yum-config-manager-disable-repo\" --parameter-type boolean --value \"true\""
+    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_test\" --name \"enable-epel\" --parameter-type boolean --value \"false\""
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_acceptance\" --lifecycle-environment \"Acceptance\" --compute-profile \"1-Small\" --architecture \"x86_64\" --partition-table \"Kickstart default\""
+    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_acceptance\" --name \"yum-config-manager-disable-repo\" --parameter-type boolean --value \"true\""
+    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_acceptance\" --name \"enable-epel\" --parameter-type boolean --value \"false\""
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_production\" --lifecycle-environment \"Production\" --compute-profile \"1-Small\" --architecture \"x86_64\" --partition-table \"Kickstart default\""
+    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_production\" --name \"yum-config-manager-disable-repo\" --parameter-type boolean --value \"true\""
+    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_production\" --name \"enable-epel\" --parameter-type boolean --value \"false\""
+
+    local domain_id
+    domain_id=$(hammer domain list --organization-id 1 --location-id 2 | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
+    
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_tanix\" --parent \"hg_development\" --content-source \"katello.tanix.nl\" --compute-resource \"Tanix vCenter\" --domain-id \"$domain_id\" --subnet \"tanix-5\""
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_tanix\" --parent \"hg_test\" --content-source \"katello.tanix.nl\" --compute-resource \"Tanix vCenter\" --domain-id \"$domain_id\" --subnet \"tanix-5\""
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_tanix\" --parent \"hg_acceptance\" --content-source \"katello.tanix.nl\" --compute-resource \"Tanix vCenter\" --domain-id \"$domain_id\" --subnet \"tanix-5\""
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_tanix\" --parent \"hg_production\" --content-source \"katello.tanix.nl\" --compute-resource \"Tanix vCenter\" --domain-id \"$domain_id\" --subnet \"tanix-5\""
 }
 
 do_populate_katello_client() {
@@ -245,12 +266,29 @@ do_populate_katello() {
     do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_Production_Key\" --quantity \"1\" --subscription-id \"$subscription_id\""    
 
     ## Create Katello hostgroup
-    local domain_id
-    domain_id=$(hammer domain list --organization-id 1 --location-id 2 | sed '4q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
-    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_production_$OS_NICE\" --lifecycle-environment \"Production\" --content-view \"CentOS $OS_VERSION\" --content-source \"katello.tanix.nl\" --compute-resource \"Tanix vCenter\" --compute-profile \"1-Small\" --domain-id \"$domain_id\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS-7\" --partition-table \"Kickstart default\""
-    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_production_$OS_NICE\" --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_Production_Key\""
-    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_production_$OS_NICE\" --name \"yum-config-manager-disable-repo\" --parameter-type boolean --value \"true\""
-    do_function_task "hammer hostgroup set-parameter --hostgroup \"hg_production_$OS_NICE\" --name \"enable-epel\" --parameter-type boolean --value \"false\""
+    local hostgroup_dev_id
+    hostgroup_dev_id=$(hammer --no-headers hostgroup list --fields Id --search "hg_development/hg_tanix" | awk '{$1=$1};1')
+    local hostgroup_tst_id
+    hostgroup_tst_id=$(hammer --no-headers hostgroup list --fields Id --search "hg_test/hg_tanix" | awk '{$1=$1};1')
+    local hostgroup_acc_id
+    hostgroup_acc_id=$(hammer --no-headers hostgroup list --fields Id --search "hg_acceptance/hg_tanix" | awk '{$1=$1};1')
+    local hostgroup_prd_id
+    hostgroup_prd_id=$(hammer --no-headers hostgroup list --fields Id --search "hg_production/hg_tanix" | awk '{$1=$1};1')  
+    
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_infra_$OS_NICE\" --parent-id $hostgroup_dev_id --content-view \"CentOS $OS_VERSION\" --operatingsystem \"CentOS-7\""
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_infra_$OS_NICE\" --parent-id $hostgroup_tst_id --content-view \"CentOS $OS_VERSION\" --operatingsystem \"CentOS-7\""
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_infra_$OS_NICE\" --parent-id $hostgroup_acc_id --content-view \"CentOS $OS_VERSION\" --operatingsystem \"CentOS-7\""
+    do_function_task "hammer hostgroup create --organization-id 1 --location-id 2 --name \"hg_infra_$OS_NICE\" --parent-id $hostgroup_prd_id --content-view \"CentOS $OS_VERSION\" --operatingsystem \"CentOS-7\""    
+
+    hostgroup_dev_id=$(hammer --no-headers hostgroup list --fields Id --search "hg_development/hg_tanix/hg_infra_$OS_NICE" | awk '{$1=$1};1')
+    hostgroup_tst_id=$(hammer --no-headers hostgroup list --fields Id --search "hg_test/hg_tanix/hg_infra_$OS_NICE" | awk '{$1=$1};1')
+    hostgroup_acc_id=$(hammer --no-headers hostgroup list --fields Id --search "hg_acceptance/hg_tanix/hg_infra_$OS_NICE" | awk '{$1=$1};1')
+    hostgroup_prd_id=$(hammer --no-headers hostgroup list --fields Id --search "hg_production/hg_tanix/hg_infra_$OS_NICE" | awk '{$1=$1};1')
+
+    do_function_task "hammer hostgroup set-parameter --hostgroup-id $hostgroup_dev_id --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_Development_Key\""
+    do_function_task "hammer hostgroup set-parameter --hostgroup-id $hostgroup_tst_id --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_Test_Key\""
+    do_function_task "hammer hostgroup set-parameter --hostgroup-id $hostgroup_acc_id --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_Acceptance_Key\""    
+    do_function_task "hammer hostgroup set-parameter --hostgroup-id $hostgroup_prd_id --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_Production_Key\""
 }
 
 do_setup_bootdisks() {
@@ -265,10 +303,10 @@ do_setup_bootdisks() {
 do_create_templates() {
     do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_packages"
     do_function_task "hammer template create --name \"Kickstart default custom packages\" --organization-id 1 --location-id 2 --type snippet --locked 0 --file /tmp/Kickstart_default_custom_packages"
-    do_function_task "hammer --no-headers os list --fields Id | while read item; do hammer template update --name \"Kickstart default custom packages\" --operatingsystem-ids $item; done"
+    do_function_task_retry "hammer --no-headers os list --fields Id | while read item; do hammer template update --name \"Kickstart default custom packages\" --operatingsystem-ids $item; done" "5"
     do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_post"
     do_function_task "hammer template create --name \"Kickstart default custom post\" --organization-id 1 --location-id 2 --type snippet --locked 0 --file /tmp/Kickstart_default_custom_post"
-    do_function_task "hammer --no-headers os list --fields Id | while read item; do hammer template update --name \"Kickstart default custom post\" --operatingsystem-ids $item; done"
+    do_function_task_retry "hammer --no-headers os list --fields Id | while read item; do hammer template update --name \"Kickstart default custom post\" --operatingsystem-ids $item; done" "5"
 }
 
 do_register_katello() {
@@ -289,18 +327,19 @@ do_create_host() {
     local PROFILE
     PROFILE="$5"
 
+    hostgroup_id=$(hammer --no-headers hostgroup list --fields Id --search "$HOSTGROUP" | awk '{$1=$1};1')
+    content_view=$(hammer hostgroup info --id "$hostgroup_id" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')
+    repository=$(hammer content-view info --organization-id 1 --name "$content_view" --fields "Yum Repositories/Name" | grep " OS " | cut -d ":" -f 2 | awk '{$1=$1};1')
+    repository_id=$(hammer repository list | grep "$repository" | cut -d "|" -f 1 | awk '{$1=$1};1')
+    
     if [ -n "$PROFILE" ]
     then
         compute_profile="$PROFILE"
     else
-        compute_profile=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    fi
+        compute_profile=$(hammer hostgroup info --id "$hostgroup_id" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
+    fi    
 
-    content_view=$(hammer hostgroup info --name "$HOSTGROUP" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    repository=$(hammer content-view info --organization-id 1 --name "$content_view" --fields "Yum Repositories/Name" | grep " OS " | cut -d ":" -f 2 | awk '{$1=$1};1')
-    repository_id=$(hammer repository list | grep "$repository" | cut -d "|" -f 1 | awk '{$1=$1};1')
-
-    do_function_task "hammer host create --name \"$NAME\" --organization \"Tanix\" --location \"Home\" --hostgroup \"$HOSTGROUP\" --compute-profile \"$compute_profile\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"$repository_id\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"$PASSWORD\" --ip \"$IP\" --compute-attributes \"start=1\""
+    do_function_task "hammer host create --name \"$NAME\" --organization \"Tanix\" --location \"Home\" --hostgroup-id \"$hostgroup_id\" --compute-profile \"$compute_profile\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"$repository_id\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"$PASSWORD\" --ip \"$IP\" --compute-attributes \"start=1\""
 }
 
 print_padded_text() {
@@ -441,7 +480,6 @@ fi
 # Hide cursor
 tput civis
 
-if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -510,7 +548,6 @@ do_function "Create Katello setup for CentOS 7.8" "do_populate_katello \"7.8\""
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
-fi
 
 ## Create templates for Katello deployment
 do_function "Create templates for Katello deployment" "do_create_templates"
@@ -522,7 +559,7 @@ do_function "Create templates for Katello deployment" "do_create_templates"
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
 
 # Create test host
-do_function "Create test host" "do_create_host \"test\" \"hg_production_7_8\" \"10.10.5.37\" \"$PASSWORD\" \"2-Medium\""
+do_function "Create test host" "do_create_host \"awk\" \"hg_production/hg_tanix/hg_infra_$OS_NICE\" \"10.10.5.37\" \"$PASSWORD\" \"2-Medium\""
 
 # Restore cursor
 tput cvvis
