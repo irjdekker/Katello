@@ -532,7 +532,6 @@ do_task "Install VMWare Tools" "yum install open-vm-tools -y"
 
 ## Update system (again)
 do_task "Update system" "yum update -y"
-fi
 
 ## Create Katello compute resource (vCenter)
 do_function "Create Katello compute resource (vCenter)" "do_compute_resource"
@@ -545,6 +544,7 @@ do_function "Create Katello subnet" "do_create_subnet"
 
 ## Create Katello LCM environments
 do_function "Create Katello LCM environments" "do_lcm_setup"
+fi
 
 ## Create Katello credential
 do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
