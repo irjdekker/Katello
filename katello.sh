@@ -23,11 +23,11 @@
 ## The following variables are defined below
 
 
-OSSETUP=('7.x,https://mirror.1000mbps.com/centos/7/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
-'7.9,https://mirror.1000mbps.com/centos-vault/7.9.2009/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
-'7.8,https://mirror.1000mbps.com/centos-vault/7.8.2003/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
-'7.7,https://mirror.1000mbps.com/centos-vault/7.7.1908/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
-'7.6,https://mirror.1000mbps.com/centos-vault/7.6.1810/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible27/')
+OSSETUP=('7.x,http://mirror.1000mbps.com/centos/7/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
+'7.9,http://mirror.1000mbps.com/centos-vault/7.9.2009/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
+'7.8,http://mirror.1000mbps.com/centos-vault/7.8.2003/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
+'7.7,http://mirror.1000mbps.com/centos-vault/7.7.1908/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
+'7.6,http://mirror.1000mbps.com/centos-vault/7.6.1810/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible27/')
 LOGFILE="$HOME/katello-install-$(date +%Y-%m-%d_%Hh%Mm).log"
 IRed='\e[0;31m'
 IGreen='\e[0;32m'
@@ -137,9 +137,9 @@ do_create_subnet() {
 do_centos7_credential() {
     do_function_task "mkdir -p /etc/pki/rpm-gpg/import"
     do_function_task "cd /etc/pki/rpm-gpg/import/"
-    do_function_task "wget -P /etc/pki/rpm-gpg/import/ https://mirror.1000mbps.com/centos/RPM-GPG-KEY-CentOS-7"
+    do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://mirror.1000mbps.com/centos/RPM-GPG-KEY-CentOS-7"
     do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-7\" --name \"RPM-GPG-KEY-CentOS-7\""    
-    do_function_task "wget -P /etc/pki/rpm-gpg/import/ https://mirror.1000mbps.com/centos/RPM-GPG-KEY-CentOS-Official"
+    do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://mirror.1000mbps.com/centos/RPM-GPG-KEY-CentOS-Official"
     do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-7\" --name \"RPM-GPG-KEY-CentOS-7\""
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ https://yum.theforeman.org/releases/2.2/RPM-GPG-KEY-foreman"
     do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-foreman\" --name \"RPM-GPG-KEY-foreman\""
