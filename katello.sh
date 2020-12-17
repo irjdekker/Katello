@@ -116,6 +116,11 @@ do_install_katello() {
     do_function_task "foreman-maintain service status"
 }
 
+do_compute_resource() {
+    do_function_task "hammer compute-resource create --organization-id 1 --location-id 2 --name \"Tanix vCenter\" --provider \"Vmware\" --server \"vcenter.tanix.nl\" --user \"administrator@tanix.local\" --password \"$PASSWORD\" --datacenter \"Datacenter\" --caching-enabled 1 --set-console-password 1"
+    do_function_task "curl -u admin:T@n1x2o11  -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://katello.tanix.nl/api/compute_resources/1-Tanix%20vCenter/refresh_cache -X PUT"
+}
+
 do_compute_profiles() {
     local cluster
     cluster=$(hammer compute-resource clusters --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '4q;d' | cut -d '|' -f 2 | awk '{$1=$1};1')
@@ -123,8 +128,8 @@ do_compute_profiles() {
     network_id=$(hammer compute-resource networks --organization-id 1 --location-id 2 --name "Tanix vCenter" | sed '6q;d' | cut -d '|' -f 1 | awk '{$1=$1};1')
 
     do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"1-Small\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=$cluster,resource_pool=Resources,path=\"/Datacenters/Datacenter/vm\",guest_id=centos7_64Guest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
-    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"2-Medium\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=2,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=$cluster,resource_pool=Resources,path=\"/Datacenters/Datacenter/vm\",guest_id=centos7_64Guest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
-    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"3-Large\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=2,corespersocket=1,memory_mb=4096,firmware=automatic,cluster=$cluster,resource_pool=Resources,path=\"/Datacenters/Datacenter/vm\",guest_id=centos7_64Guest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
+    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"2-Medium\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=2,memory_mb=2048,firmware=automatic,cluster=$cluster,resource_pool=Resources,path=\"/Datacenters/Datacenter/vm\",guest_id=centos7_64Guest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
+    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"3-Large\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=2,memory_mb=4096,firmware=automatic,cluster=$cluster,resource_pool=Resources,path=\"/Datacenters/Datacenter/vm\",guest_id=centos7_64Guest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=$network_id"
 }
 
 do_create_subnet() {
@@ -528,7 +533,7 @@ do_task "Install VMWare Tools" "yum install open-vm-tools -y"
 do_task "Update system" "yum update -y"
 
 ## Create Katello compute resource (vCenter)
-do_task "Create Katello compute resource (vCenter)" "hammer compute-resource create --organization-id 1 --location-id 2 --name \"Tanix vCenter\" --provider \"Vmware\" --server \"vcenter.tanix.nl\" --user \"administrator@tanix.local\" --password \"$PASSWORD\" --datacenter \"Datacenter\" --caching-enabled 1 --set-console-password 1"
+do_function_task "Create Katello compute resource (vCenter)" "do_compute_resource"
 
 ## Update Katello compute profiles
 do_function "Update Katello compute profiles" "do_compute_profiles"
