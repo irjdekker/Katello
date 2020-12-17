@@ -546,10 +546,10 @@ do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
 do_function "Create Katello setup for Katello Client 7" "do_populate_katello_client"
 
 ## Create Katello setup for CentOS 7.8
-do_function "Create Katello setup for CentOS 7.8" "do_populate_katello \"7.8\""
+#do_function "Create Katello setup for CentOS 7.8" "do_populate_katello \"7.8\""
 
 ## Create Katello setup for CentOS 7.x
-# do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"7.x\""
+do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"7.x\""
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
@@ -558,7 +558,7 @@ do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
 do_function "Create templates for Katello deployment" "do_create_templates"
 
 # Register katello host
-# do_function "Register katello host" "do_register_katello"
+do_function "Register katello host" "do_register_katello"
 
 # Change destroy setting
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
