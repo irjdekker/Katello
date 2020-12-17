@@ -490,6 +490,7 @@ fi
 # Hide cursor
 tput civis
 
+if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -531,9 +532,10 @@ do_task "Install VMWare Tools" "yum install open-vm-tools -y"
 
 ## Update system (again)
 do_task "Update system" "yum update -y"
+fi
 
 ## Create Katello compute resource (vCenter)
-do_function_task "Create Katello compute resource (vCenter)" "do_compute_resource"
+do_function "Create Katello compute resource (vCenter)" "do_compute_resource"
 
 ## Update Katello compute profiles
 do_function "Update Katello compute profiles" "do_compute_profiles"
