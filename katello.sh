@@ -544,7 +544,7 @@ do_function "Create Katello subnet" "do_create_subnet"
 
 ## Create Katello LCM environments
 do_function "Create Katello LCM environments" "do_lcm_setup"
-fi
+fi # end
 
 ## Create Katello credential
 do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
