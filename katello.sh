@@ -347,6 +347,8 @@ do_create_host() {
         compute_profile=$(hammer hostgroup info --id "$hostgroup_id" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
     fi    
 
+    echo "hammer host create --name \"$NAME\" --organization \"Tanix\" --location \"Home\" --hostgroup-id \"$hostgroup_id\" --compute-profile \"$compute_profile\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"$repository_id\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"$PASSWORD\" --ip \"$IP\" --compute-attributes \"start=1\""
+
     do_function_task "hammer host create --name \"$NAME\" --organization \"Tanix\" --location \"Home\" --hostgroup-id \"$hostgroup_id\" --compute-profile \"$compute_profile\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"$repository_id\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"$PASSWORD\" --ip \"$IP\" --compute-attributes \"start=1\""
 }
 
