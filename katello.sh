@@ -183,7 +183,6 @@ do_populate_katello() {
     local SYNC_TIME
     SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
 
-if false; then
     ## Create Katello product
     do_function_task "hammer product create --organization-id 1 --name \"CentOS ${OS_VERSION} Linux x86_64\""
 
@@ -252,7 +251,6 @@ if false; then
         do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_centos_id}\""
         do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_katello_id}\""        
     done  
-fi
 
     ## Create Katello hostgroup
     hammer --no-headers location list --fields Name | while read -r location; 
@@ -318,7 +316,7 @@ do_create_host() {
         compute_profile=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
     fi  
 
-    do_function_task "hammer host create --name \"${NAME}\" --organization \"Tanix\" --location \"Home\" --hostgroup-id \"${hostgroup_id}" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${PASSWORD}\" --ip \"${IP}\" --compute-attributes \"start=1\""
+    do_function_task "hammer host create --name \"${NAME}\" --organization \"Tanix\" --location \"Home\" --hostgroup-id \"${hostgroup_id}\" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${PASSWORD}\" --ip \"${IP}\" --compute-attributes \"start=1\""
 }
 
 print_padded_text() {
