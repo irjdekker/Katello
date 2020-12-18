@@ -316,7 +316,9 @@ do_create_host() {
         compute_profile="${PROFILE}"
     else
         compute_profile=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    fi    
+    fi
+
+    print "...."   
 
     do_function_task "hammer host create --name \"${NAME}\" --organization \"Tanix\" --location \"Home\" --hostgroup-id \"${hostgroup_id} --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${PASSWORD}\" --ip \"${IP}\" --compute-attributes \"start=1\""
 }
@@ -522,12 +524,10 @@ do_function "Create Katello setup for Katello Client 7" "do_populate_katello_cli
 
 ## Create Katello setup for CentOS 7.8
 #do_function "Create Katello setup for CentOS 7.8" "do_populate_katello \"7.8\""
-fi
 
 ## Create Katello setup for CentOS 7.x
 do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"7.x\""
 
-if false; then
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
 
