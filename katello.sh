@@ -143,7 +143,7 @@ do_centos7_credential() {
     do_function_task "mkdir -p /etc/pki/rpm-gpg/import"
     do_function_task "cd /etc/pki/rpm-gpg/import/"
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://mirror.1000mbps.com/centos/RPM-GPG-KEY-CentOS-7"
-    # do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-7\" --name \"RPM-GPG-KEY-CentOS-7\""    
+    do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-7\" --name \"RPM-GPG-KEY-CentOS-7\""    
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://mirror.1000mbps.com/centos/RPM-GPG-KEY-CentOS-Official"
     do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-Official\" --name \"RPM-GPG-KEY-CentOS-8\""
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ https://yum.theforeman.org/releases/2.2/RPM-GPG-KEY-foreman"
@@ -311,12 +311,10 @@ do_setup_bootdisks() {
 }
 
 do_create_templates() {
-    do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_packages"
-    do_function_task "hammer template create --name \"Kickstart default custom packages\" --organization-id 1 --location-id 2 --type snippet --locked 0 --file /tmp/Kickstart_default_custom_packages"
-    do_function_task_retry "hammer --no-headers os list --fields Id | while read item; do hammer template update --name \"Kickstart default custom packages\" --operatingsystem-ids $item; done" "5"
+    # do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_packages"
+    # do_function_task "hammer template create --name \"Kickstart default custom packages\" --organization-id 1 --location-id 2 --type snippet --locked 1 --file /tmp/Kickstart_default_custom_packages"
     do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_post"
-    do_function_task "hammer template create --name \"Kickstart default custom post\" --organization-id 1 --location-id 2 --type snippet --locked 0 --file /tmp/Kickstart_default_custom_post"
-    do_function_task_retry "hammer --no-headers os list --fields Id | while read item; do hammer template update --name \"Kickstart default custom post\" --operatingsystem-ids $item; done" "5"
+    do_function_task "hammer template create --name \"Kickstart default custom post\" --organization-id 1 --location-id 2 --type snippet --locked 1 --file /tmp/Kickstart_default_custom_post"
 }
 
 do_register_katello() {
@@ -544,7 +542,6 @@ do_function "Create Katello subnet" "do_create_subnet"
 
 ## Create Katello LCM environments
 do_function "Create Katello LCM environments" "do_lcm_setup"
-fi # end
 
 ## Create Katello credential
 do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
@@ -560,6 +557,7 @@ do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"7.x\""
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
+fi # end
 
 ## Create templates for Katello deployment
 do_function "Create templates for Katello deployment" "do_create_templates"
