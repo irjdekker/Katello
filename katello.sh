@@ -457,7 +457,6 @@ fi
 # Hide cursor
 tput civis
 
-if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -535,7 +534,6 @@ do_function "Register katello host" "do_register_katello"
 
 # Change destroy setting
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
-fi
 
 # Create test host
 do_function "Create test host" "do_create_host \"awk\" \"hg_production_home_7_x\" \"10.10.5.37\" \"${PASSWORD}\" \"2-Medium\""
