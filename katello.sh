@@ -311,8 +311,8 @@ do_setup_bootdisks() {
 }
 
 do_create_templates() {
-    # do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_packages"
-    # do_function_task "hammer template create --name \"Kickstart default custom packages\" --organization-id 1 --location-id 2 --type snippet --locked 1 --file /tmp/Kickstart_default_custom_packages"
+    do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_packages"
+    do_function_task "hammer template create --name \"Kickstart default custom packages\" --organization-id 1 --location-id 2 --type snippet --locked 1 --file /tmp/Kickstart_default_custom_packages"
     do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_post"
     do_function_task "hammer template create --name \"Kickstart default custom post\" --organization-id 1 --location-id 2 --type snippet --locked 1 --file /tmp/Kickstart_default_custom_post"
 }
@@ -557,7 +557,7 @@ do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"7.x\""
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
-fi # end
+
 
 ## Create templates for Katello deployment
 do_function "Create templates for Katello deployment" "do_create_templates"
@@ -567,6 +567,7 @@ do_function "Register katello host" "do_register_katello"
 
 # Change destroy setting
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
+fi # end
 
 # Create test host
 do_function "Create test host" "do_create_host \"awk\" \"hg_production/hg_tanix/hg_infra_7_x\" \"10.10.5.37\" \"$PASSWORD\" \"2-Medium\""
