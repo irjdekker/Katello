@@ -22,7 +22,6 @@
 ##
 ## The following variables are defined below
 
-
 OSSETUP=('7.x,http://mirror.1000mbps.com/centos/7/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
 '7.9,http://mirror.1000mbps.com/centos-vault/7.9.2009/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
 '7.8,http://mirror.1000mbps.com/centos-vault/7.8.2003/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
@@ -457,6 +456,7 @@ fi
 # Hide cursor
 tput civis
 
+if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -501,6 +501,7 @@ do_task "Update system" "yum update -y"
 
 ## Create Katello compute resource (vCenter)
 do_function "Create Katello compute resource (vCenter)" "do_compute_resource"
+fi
 
 ## Update Katello compute profiles
 do_function "Update Katello compute profiles" "do_compute_profiles"
