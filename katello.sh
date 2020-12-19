@@ -1,6 +1,6 @@
 #!/bin/bash
 ## The easiest way to get the script on your machine is:
-## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null | bash -s <password>
+## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null | bash
 
 ## Exit when any command fails
 # set -e
@@ -126,8 +126,14 @@ do_compute_profiles() {
     local network_id
     network_id=$(hammer --no-headers compute-resource networks --organization-id 1 --location-id 2 --name "Tanix vCenter" --fields Id,Name | grep "tanix-5" | cut -d '|' -f 1 | awk '{$1=$1};1')
 
+    do_function_task "hammer compute-profile delete --name \"1-Small\""
+    do_function_task "hammer compute-profile create --name \"1-Small\""
     do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"1-Small\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${cluster},resource_pool=Resources,path=\"/Datacenters/Datacenter/vm\",guest_id=centos7_64Guest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}"
+    do_function_task "hammer compute-profile delete --name \"2-Medium\""
+    do_function_task "hammer compute-profile create --name \"2-Medium\""
     do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"2-Medium\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=2,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${cluster},resource_pool=Resources,path=\"/Datacenters/Datacenter/vm\",guest_id=centos7_64Guest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}"
+    do_function_task "hammer compute-profile delete --name \"3-Large\""
+    do_function_task "hammer compute-profile create --name \"3-Large\""
     do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"3-Large\" --compute-resource \"Tanix vCenter\" --compute-attributes cpus=2,corespersocket=1,memory_mb=4096,firmware=automatic,cluster=${cluster},resource_pool=Resources,path=\"/Datacenters/Datacenter/vm\",guest_id=centos7_64Guest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}"
 }
 
@@ -438,14 +444,15 @@ do_function() {
 ##                                                                                                     ##
 ## *************************************************************************************************** ##
 
+echo 'Welcome to Katello installer'
+read -rsp 'Password: ' PASSWORD
+
 ## Check if password is specified
-if [[ $# -eq 0 ]]
+if [[ -z "${PASSWORD}" ]]; then
 then
     echo "No password supplied"
     exit
 fi
-
-PASSWORD="$1"
 
 ## Check if script run by user root
 if [ "$(whoami)" != "root" ]; then
