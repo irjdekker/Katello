@@ -1,7 +1,11 @@
 #!/bin/bash
 ## The easiest way to get the script on your machine is:
-## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null | bash
-## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null | bash
+## a) without specifying the password
+## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh -o katello.sh 2>/dev/null && bash katello.sh && rm katello.sh
+## wget -O katello.sh https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null && bash katello.sh && rm katello.sh
+## b) with specifying the password
+## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null | bash -s <password>
+## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null | bash -s <password>
 
 ## Exit when any command fails
 # set -e
