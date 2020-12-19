@@ -449,7 +449,7 @@ echo 'Welcome to Katello installer'
 
 ## Check if password is specified
 if [[ $# -eq 0 ]]; then
-    read -rsp 'Password: ' PASSWORD
+    read -rs 'Password: ' PASSWORD
 
     ## Check if password is specified
     if [[ -z "${PASSWORD}" ]]; then
