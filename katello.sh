@@ -1,8 +1,8 @@
 #!/bin/bash
 ## The easiest way to get the script on your machine is:
 ## a) without specifying the password
-## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh -o katello.sh 2>/dev/null && bash katello.sh && rm katello.sh
-## wget -O katello.sh https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null && bash katello.sh && rm katello.sh
+## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh -o katello.sh 2>/dev/null && bash katello.sh && rm -f katello.sh
+## wget -O katello.sh https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null && bash katello.sh && rm -f katello.sh
 ## b) with specifying the password
 ## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null | bash -s <password>
 ## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null | bash -s <password>
