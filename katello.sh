@@ -1,6 +1,7 @@
 #!/bin/bash
 ## The easiest way to get the script on your machine is:
 ## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null | bash
+## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh 2>/dev/null | bash
 
 ## Exit when any command fails
 # set -e
@@ -445,13 +446,20 @@ do_function() {
 ## *************************************************************************************************** ##
 
 echo 'Welcome to Katello installer'
-read -rsp 'Password: ' PASSWORD
 
 ## Check if password is specified
-if [[ -z "${PASSWORD}" ]]; then
+if [[ $# -eq 0 ]]
 then
-    echo "No password supplied"
-    exit
+    read -rsp 'Password: ' PASSWORD
+
+    ## Check if password is specified
+    if [[ -z "${PASSWORD}" ]]
+    then
+        echo "No password supplied"
+        exit
+    fi
+else
+    PASSWORD="$1"
 fi
 
 ## Check if script run by user root
