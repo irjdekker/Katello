@@ -448,13 +448,11 @@ do_function() {
 echo 'Welcome to Katello installer'
 
 ## Check if password is specified
-if [[ $# -eq 0 ]]
-then
+if [[ $# -eq 0 ]]; then
     read -rsp 'Password: ' PASSWORD
 
     ## Check if password is specified
-    if [[ -z "${PASSWORD}" ]]
-    then
+    if [[ -z "${PASSWORD}" ]]; then
         echo "No password supplied"
         exit
     fi
