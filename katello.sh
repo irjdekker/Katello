@@ -1,4 +1,6 @@
 #!/bin/bash
+# shellcheck disable=SC2181
+
 ## The easiest way to get the script on your machine is:
 ## a) without specifying the password
 ## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/katello.sh -o katello.sh 2>/dev/null && bash katello.sh && rm -f katello.sh
@@ -229,28 +231,31 @@ do_populate_katello() {
 
     ## Publish and promote content view
     do_function_task "hammer content-view publish --organization-id 1 --name \"CentOS ${OS_VERSION}\" --description \"Initial publishing\""
-    hammer --no-headers lifecycle-environment list --fields Name | grep -v "Library" | while read -r lcm;
+    hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library" | while read -r lcm;
     do
         do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS ${OS_VERSION}\" --version \"1.0\" --to-lifecycle-environment \"${lcm}\""
     done
+    if [ $? -ne 0 ]; then exit 1; fi
 
     ## Create Katello activation keys
-    hammer --no-headers lifecycle-environment list --fields Name | grep -v "Library" | while read -r lcm;
+    hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library" | while read -r lcm;
     do
         do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --unlimited-hosts"
     done
+    if [ $? -ne 0 ]; then exit 1; fi    
 
     ## Assign activation keys to Katello subscription (current view)
     local sub_centos_id
     sub_centos_id=$(hammer --no-headers subscription list --fields Id --search "CentOS ${OS_VERSION} Linux x86_64" | awk '{$1=$1};1')
     local sub_katello_id
     sub_katello_id=$(hammer --no-headers subscription list --fields Id --search "Katello Client 7" | awk '{$1=$1};1')
-    hammer --no-headers lifecycle-environment list --fields Name | grep -v "Library" | while read -r lcm;
+    hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library" | while read -r lcm;
     do
         do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_centos_id}\""
         do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_katello_id}\""        
     done  
-
+    if [ $? -ne 0 ]; then exit 1; fi
+    
     ## Create Katello hostgroup
     hammer --no-headers location list --fields Name | while read -r location; 
     do
@@ -266,7 +271,9 @@ do_populate_katello() {
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"enable-epel\" --parameter-type boolean --value \"false\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_${lcm}_Key\""            
         done
+        if [ $? -ne 0 ]; then exit 1; fi
     done
+    if [ $? -ne 0 ]; then exit 1; fi    
 }
 
 do_setup_bootdisks() {
@@ -364,7 +371,7 @@ print_task() {
 
     if (( STATUS >= 1 )); then
         tput cvvis
-        exit
+        exit 1
     fi
 }
 
@@ -449,7 +456,7 @@ if [[ $# -eq 0 ]]; then
     ## Check if password is specified
     if [[ -z "${PASSWORD}" ]]; then
         echo "No password supplied"
-        exit
+        exit 1
     fi
 else
     PASSWORD="$1"
@@ -458,7 +465,7 @@ fi
 ## Check if script run by user root
 if [ "$(whoami)" != "root" ]; then
     echo "Script startup must be run as user: root"
-    exit
+    exit 1
 fi
 
 # Hide cursor
