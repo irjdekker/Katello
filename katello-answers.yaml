@@ -87,7 +87,7 @@ foreman_proxy:
   ssl_key: "/etc/foreman-proxy/ssl_key.pem"
   ssl_port: '9090'
 foreman_proxy_content:
-  pulp_num_workers: 3
+  pulp_num_workers: 1
   pulp_worker_timeout: 120
   proxy_pulp_yum_to_pulpcore: true  
 foreman_proxy::plugin::ansible: true
@@ -103,7 +103,7 @@ foreman_proxy::plugin::pulp:
 foreman_proxy::plugin::remote_execution::ssh: false
 foreman_proxy::plugin::salt: false
 katello:
-  num_pulp_workers: 3
+  num_pulp_workers: 1
   pulp_worker_timeout: 120  
   use_pulp_2_for_yum: false
 puppet:
