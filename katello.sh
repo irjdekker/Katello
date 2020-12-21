@@ -550,7 +550,7 @@ do_function "Register katello host" "do_register_katello"
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
 
 # Create test host
-do_function "Create test host" "do_create_host \"awk\" \"hg_production_home_7_x\" \"10.10.5.37\" \"${PASSWORD}\" \"2-Medium\""
+do_function "Create test host" "do_create_host \"awk\" \"hg_production_home_7_x\" \"10.10.5.37\" \"${PASSWORD}\" \"3-Large\""
 
 # Restore cursor
 tput cvvis
