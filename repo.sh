@@ -295,7 +295,7 @@ fi
 tput civis
 
 ## Create Katello setup for CentOS specific version
-do_function "Create Katello setup for CentOS 7.8" "do_populate_katello \"${VERSION}\""
+do_function "Create Katello setup for CentOS ${VERSION}" "do_populate_katello \"${VERSION}\""
 
 # Restore cursor
 tput cvvis
