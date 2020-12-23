@@ -80,13 +80,21 @@ do_populate_katello() {
             tmpBaseUrl=${tmpArray[2]}
 
             if [[ "${OS_VERSION}" == "${tmpOS}" ]] ; then
+                if [[ ${tmpOS:0:1} == "7" ]] ; then 
+                    tmpGPGKey = "RPM-GPG-KEY-CentOS-7"
+                elif [[ ${tmpOS:0:1} == "8" ]] ; then
+                    tmpGPGKey = "RPM-GPG-KEY-CentOS-8"
+                else 
+                    print_task "${MESSAGE}" 1 true 
+                fi
+                
                 for ((i=0; i<tmpItems; i++))
                 do
                     tmpName=${tmpArray[3+2*i]}
                     tmpLocation=${tmpArray[4+2*i]}
                     
                     ## Create Katello repository
-                    do_function_task "hammer repository create --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} ${tmpName} x86_64\" --label \"CentOS_${OS_NICE}_${tmpName}_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"${tmpBaseUrl}${tmpLocation}\" --mirror-on-sync \"no\""
+                    do_function_task "hammer repository create --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} ${tmpName} x86_64\" --label \"CentOS_${OS_NICE}_${tmpName}_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"${tmpGPGKey}\" --url \"${tmpBaseUrl}${tmpLocation}\" --mirror-on-sync \"no\""
                     
                     ## Synchronize Katello repository
                     do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} ${tmpName} x86_64\"" "5"
