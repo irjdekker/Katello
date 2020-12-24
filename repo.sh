@@ -21,19 +21,19 @@
 ##
 ## The following variables are defined below
 
-OSSETUP=('8.x,5,http://mirror.1000mbps.com/centos/8/,BaseOS,BaseOS/x86_64/os/,AppStream,AppStream/x86_64/os/,PowerTools,PowerTools/x86_64/os/,Extras,extras/x86_64/os/,Ansible,configmanagement/x86_64/ansible-29/' \
-'8.2,5,http://mirror.1000mbps.com/centos-vault/8.2.2004/,BaseOS,BaseOS/x86_64/os/,AppStream,AppStream/x86_64/os/,PowerTools,PowerTools/x86_64/os/,Extras,extras/x86_64/os/,Ansible,configmanagement/x86_64/ansible-29/' \
-'8.1,5,http://mirror.1000mbps.com/centos-vault/8.1.1911/,BaseOS,BaseOS/x86_64/os/,AppStream,AppStream/x86_64/os/,PowerTools,PowerTools/x86_64/os/,Extras,extras/x86_64/os/,Ansible,configmanagement/x86_64/ansible-29/' \
-'7.x,4,http://mirror.1000mbps.com/centos/7/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible-29/' \
-'7.9,4,http://mirror.1000mbps.com/centos-vault/7.9.2009/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible-29/' \
-'7.8,4,http://mirror.1000mbps.com/centos-vault/7.8.2003/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible-29/' \
-'7.7,4,http://mirror.1000mbps.com/centos-vault/7.7.1908/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible-29/' \
-'7.6,4,http://mirror.1000mbps.com/centos-vault/7.6.1810/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible27/' \
-'7.5,4,http://mirror.1000mbps.com/centos-vault/7.5.1804/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible26/' \
-'7.4,3,http://mirror.1000mbps.com/centos-vault/7.4.1708/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/' \
-'7.3,3,http://mirror.1000mbps.com/centos-vault/7.3.1611/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/' \
-'7.2,3,http://mirror.1000mbps.com/centos-vault/7.2.1511/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/' \
-'7.1,3,http://mirror.1000mbps.com/centos-vault/7.1.1503/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/')
+OSSETUP=('8.x,8.3,5,http://mirror.1000mbps.com/centos/8/,BaseOS,BaseOS/x86_64/os/,AppStream,AppStream/x86_64/os/,PowerTools,PowerTools/x86_64/os/,Extras,extras/x86_64/os/,Ansible,configmanagement/x86_64/ansible-29/' \
+'8.2,8.2,5,http://mirror.1000mbps.com/centos-vault/8.2.2004/,BaseOS,BaseOS/x86_64/os/,AppStream,AppStream/x86_64/os/,PowerTools,PowerTools/x86_64/os/,Extras,extras/x86_64/os/,Ansible,configmanagement/x86_64/ansible-29/' \
+'8.1,8.1,5,http://mirror.1000mbps.com/centos-vault/8.1.1911/,BaseOS,BaseOS/x86_64/os/,AppStream,AppStream/x86_64/os/,PowerTools,PowerTools/x86_64/os/,Extras,extras/x86_64/os/,Ansible,configmanagement/x86_64/ansible-29/' \
+'7.x,7.9,4,http://mirror.1000mbps.com/centos/7/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible-29/' \
+'7.9,7.9,4,http://mirror.1000mbps.com/centos-vault/7.9.2009/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible-29/' \
+'7.8,7.8,4,http://mirror.1000mbps.com/centos-vault/7.8.2003/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible-29/' \
+'7.7,7.7,4,http://mirror.1000mbps.com/centos-vault/7.7.1908/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible-29/' \
+'7.6,7.6,4,http://mirror.1000mbps.com/centos-vault/7.6.1810/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible27/' \
+'7.5,7.5,4,http://mirror.1000mbps.com/centos-vault/7.5.1804/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/,Ansible,configmanagement/x86_64/ansible26/' \
+'7.4,7.4,3,http://mirror.1000mbps.com/centos-vault/7.4.1708/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/' \
+'7.3,7.3,3,http://mirror.1000mbps.com/centos-vault/7.3.1611/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/' \
+'7.2,7.2,3,http://mirror.1000mbps.com/centos-vault/7.2.1511/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/' \
+'7.1,7.1,3,http://mirror.1000mbps.com/centos-vault/7.1.1503/,OS,os/x86_64/,Extras,extras/x86_64/,Updates,updates/x86_64/')
 LOGFILE="$HOME/repo-install-$(date +%Y-%m-%d_%Hh%Mm).log"
 IRed='\e[0;31m'
 IGreen='\e[0;32m'
@@ -76,22 +76,23 @@ do_populate_katello() {
         then
             IFS=',' read -ra tmpArray <<< "${item}"
             tmpOS=${tmpArray[0]}
-            tmpItems=${tmpArray[1]}
-            tmpBaseUrl=${tmpArray[2]}
+            tmpVersion=${tmpArray[1]}
+            tmpItems=${tmpArray[2]}
+            tmpBaseUrl=${tmpArray[3]}
 
             if [[ "${OS_VERSION}" == "${tmpOS}" ]] ; then
                 if [[ ${tmpOS:0:1} == "7" ]] ; then 
-                    tmpGPGKey = "RPM-GPG-KEY-CentOS-7"
+                    tmpGPGKey="RPM-GPG-KEY-CentOS-7"
                 elif [[ ${tmpOS:0:1} == "8" ]] ; then
-                    tmpGPGKey = "RPM-GPG-KEY-CentOS-8"
+                    tmpGPGKey="RPM-GPG-KEY-CentOS-8"
                 else 
                     print_task "${MESSAGE}" 1 true 
                 fi
                 
                 for ((i=0; i<tmpItems; i++))
                 do
-                    tmpName=${tmpArray[3+2*i]}
-                    tmpLocation=${tmpArray[4+2*i]}
+                    tmpName=${tmpArray[4+2*i]}
+                    tmpLocation=${tmpArray[5+2*i]}
                     
                     ## Create Katello repository
                     do_function_task "hammer repository create --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} ${tmpName} x86_64\" --label \"CentOS_${OS_NICE}_${tmpName}_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"${tmpGPGKey}\" --url \"${tmpBaseUrl}${tmpLocation}\" --mirror-on-sync \"no\""
@@ -136,6 +137,19 @@ do_populate_katello() {
     done  
     if [ $? -ne 0 ]; then exit 1; fi
     
+    ## Check Operating System
+    if [[ ${tmpOS:0:1} == "8" ]] ; then
+        os_new_id=$(hammer --no-headers os list --fields Id --search "CentOS-8" | awk '{$1=$1};1')
+        if [ -z "${os_new_id}" ]; then
+            os_old_id=$(hammer --no-headers os list --fields Id --search "CentOS-Linux-8" | awk '{$1=$1};1')
+            if [ -n "${os_old_id}" ]; then
+                do_function_task "hammer os update --id ${os_old_id} --description \"CentOS-8\""
+            else
+                exit 1
+            fi
+        fi
+    fi
+    
     ## Create Katello hostgroup
     hammer --no-headers location list --fields Name | while read -r location; 
     do
@@ -146,7 +160,8 @@ do_populate_katello() {
             location_lower=$(echo "$location" | tr "[:upper:]" "[:lower:]")
             hostgroup_name="hg_${lcm_lower}_${location_lower}_${OS_NICE}"
             
-            do_function_task "hammer hostgroup create --organization-id 1 --location \"${location}\" --name \"${hostgroup_name}\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --content-source \"katello.tanix.nl\" --compute-resource \"${VMWARE}\" --compute-profile \"1-Small\" --domain-id \"${domain_id}\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS-7\" --partition-table \"Kickstart default\""
+            do_function_task "hammer hostgroup create --organization-id 1 --location \"${location}\" --name \"${hostgroup_name}\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --content-source \"katello.tanix.nl\" --compute-resource \"${VMWARE}\" --compute-profile \"1-Small\" --domain-id \"${domain_id}\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS-${tmpOS:0:1}\" --partition-table \"Kickstart default\""
+            do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"centos-version\" --parameter-type string --value \"${tmpVersion}\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"yum-config-manager-disable-repo\" --parameter-type boolean --value \"true\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"enable-epel\" --parameter-type boolean --value \"false\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_${lcm}_Key\""            

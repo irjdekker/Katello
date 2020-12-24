@@ -21,11 +21,6 @@
 ##
 ## The following variables are defined below
 
-OSSETUP=('7.x,http://mirror.1000mbps.com/centos/7/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
-'7.9,http://mirror.1000mbps.com/centos-vault/7.9.2009/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
-'7.8,http://mirror.1000mbps.com/centos-vault/7.8.2003/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
-'7.7,http://mirror.1000mbps.com/centos-vault/7.7.1908/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible-29/' \
-'7.6,http://mirror.1000mbps.com/centos-vault/7.6.1810/,os/x86_64/,extras/x86_64/,updates/x86_64/,configmanagement/x86_64/ansible27/')
 LOGFILE="$HOME/katello-install-$(date +%Y-%m-%d_%Hh%Mm).log"
 IRed='\e[0;31m'
 IGreen='\e[0;32m'
@@ -128,9 +123,9 @@ do_compute_profiles() {
     local network_id
     network_id=$(hammer --no-headers compute-resource networks --organization-id 1 --location-id 2 --name "${VMWARE}" --fields Id,Name | grep "tanix-5" | cut -d '|' -f 1 | awk '{$1=$1};1')
 
-    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"1-Small\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=centos7_64Guest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}"
-    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"2-Medium\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=centos7_64Guest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}"
-    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"3-Large\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=4096,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=centos7_64Guest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}"
+    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"1-Small\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}"
+    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"2-Medium\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}"
+    do_function_task "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"3-Large\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=4096,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}"
 }
 
 do_create_subnet() {
@@ -176,106 +171,6 @@ do_populate_katello_client() {
     do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"Katello Client 7\" --name \"Katello Client 7\"" "5"
 }
 
-do_populate_katello() {
-    local OS_VERSION
-    OS_VERSION="$1"
-    local OS_NICE
-    OS_NICE=${OS_VERSION//[^[:alnum:]-]/_}
-    local SYNC_TIME
-    SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
-
-    ## Create Katello product
-    do_function_task "hammer product create --organization-id 1 --name \"CentOS ${OS_VERSION} Linux x86_64\""
-
-    ## Create Katello repositories
-    for item in "${OSSETUP[@]}"
-    do
-        if [[ "${item}" == *","* ]]
-        then
-            IFS=',' read -ra tmpArray <<< "${item}"
-            tmpOS=${tmpArray[0]}
-            tmpBaseUrl=${tmpArray[1]}
-            tmpBaseOS=${tmpArray[2]}
-            tmpBaseExtras=${tmpArray[3]}
-            tmpBaseUpdates=${tmpArray[4]}
-            tmpBaseAnsible=${tmpArray[5]}
-
-            if [[ "${OS_VERSION}" == "${tmpOS}" ]] ; then
-                do_function_task "hammer repository create --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} OS x86_64\" --label \"CentOS_${OS_NICE}_OS_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"${tmpBaseUrl}${tmpBaseOS}\" --mirror-on-sync \"no\""
-                do_function_task "hammer repository create --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} Extras x86_64\" --label \"CentOS_${OS_NICE}_Extras_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"${tmpBaseUrl}${tmpBaseExtras}\" --mirror-on-sync \"no\""
-                do_function_task "hammer repository create --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} Updates x86_64\" --label \"CentOS_${OS_NICE}_Updates_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"${tmpBaseUrl}${tmpBaseUpdates}\" --mirror-on-sync \"no\""
-                do_function_task "hammer repository create --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} Ansible x86_64\" --label \"CentOS_${OS_NICE}_Ansible_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-CentOS-7\" --url \"${tmpBaseUrl}${tmpBaseAnsible}\" --mirror-on-sync \"no\""
-            fi
-        fi
-    done
-
-    ## Create Katello synchronization plan
-    do_function_task "hammer sync-plan create --organization-id 1 --name \"Daily Sync CentOS ${OS_VERSION}\" --interval daily --enabled true --sync-date \"2020-01-01 ${SYNC_TIME}\""
-    do_function_task "hammer product set-sync-plan --organization-id 1 --name \"CentOS ${OS_VERSION} Linux x86_64\" --sync-plan \"Daily Sync CentOS ${OS_VERSION}\""
-
-    ## Synchronize Katello repositories
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} OS x86_64\"" "5"
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} Extras x86_64\"" "5"
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} Updates x86_64\"" "5"
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} Ansible x86_64\"" "5"
-
-    ## Create Katello content view
-    do_function_task "hammer content-view create --organization-id 1 --name \"CentOS ${OS_VERSION}\" --label \"CentOS_${OS_NICE}\""
-
-    ## Add repositories to content view
-    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS ${OS_VERSION}\" --product \"CentOS ${OS_VERSION} Linux x86_64\" --repository \"CentOS ${OS_VERSION} OS x86_64\""
-    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS ${OS_VERSION}\" --product \"CentOS ${OS_VERSION} Linux x86_64\" --repository \"CentOS ${OS_VERSION} Extras x86_64\""
-    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS ${OS_VERSION}\" --product \"CentOS ${OS_VERSION} Linux x86_64\" --repository \"CentOS ${OS_VERSION} Updates x86_64\""
-    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS ${OS_VERSION}\" --product \"CentOS ${OS_VERSION} Linux x86_64\" --repository \"CentOS ${OS_VERSION} Ansible x86_64\""
-    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS ${OS_VERSION}\" --product \"Katello Client 7\" --repository \"Katello Client 7\""
-
-    ## Publish and promote content view
-    do_function_task "hammer content-view publish --organization-id 1 --name \"CentOS ${OS_VERSION}\" --description \"Initial publishing\""
-    hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library" | while read -r lcm;
-    do
-        do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS ${OS_VERSION}\" --version \"1.0\" --to-lifecycle-environment \"${lcm}\""
-    done
-    if [ $? -ne 0 ]; then exit 1; fi
-
-    ## Create Katello activation keys
-    hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library" | while read -r lcm;
-    do
-        do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --unlimited-hosts"
-    done
-    if [ $? -ne 0 ]; then exit 1; fi    
-
-    ## Assign activation keys to Katello subscription (current view)
-    local sub_centos_id
-    sub_centos_id=$(hammer --no-headers subscription list --fields Id --search "CentOS ${OS_VERSION} Linux x86_64" | awk '{$1=$1};1')
-    local sub_katello_id
-    sub_katello_id=$(hammer --no-headers subscription list --fields Id --search "Katello Client 7" | awk '{$1=$1};1')
-    hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library" | while read -r lcm;
-    do
-        do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_centos_id}\""
-        do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_katello_id}\""        
-    done  
-    if [ $? -ne 0 ]; then exit 1; fi
-    
-    ## Create Katello hostgroup
-    hammer --no-headers location list --fields Name | while read -r location; 
-    do
-        domain_id=$(hammer --no-headers domain list --organization-id 1 --location "$location" --fields Id | awk '{$1=$1};1')
-        hammer --no-headers lifecycle-environment list --fields Name | grep -v "Library" | while read -r lcm;
-        do
-            lcm_lower=$(echo "$lcm" | tr "[:upper:]" "[:lower:]")
-            location_lower=$(echo "$location" | tr "[:upper:]" "[:lower:]")
-            hostgroup_name="hg_${lcm_lower}_${location_lower}_${OS_NICE}"
-            
-            do_function_task "hammer hostgroup create --organization-id 1 --location \"${location}\" --name \"${hostgroup_name}\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --content-source \"katello.tanix.nl\" --compute-resource \"${VMWARE}\" --compute-profile \"1-Small\" --domain-id \"${domain_id}\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS-7\" --partition-table \"Kickstart default\""
-            do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"yum-config-manager-disable-repo\" --parameter-type boolean --value \"true\""
-            do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"enable-epel\" --parameter-type boolean --value \"false\""
-            do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_${lcm}_Key\""            
-        done
-        if [ $? -ne 0 ]; then exit 1; fi
-    done
-    if [ $? -ne 0 ]; then exit 1; fi    
-}
-
 do_setup_bootdisks() {
     do_function_task "mkdir /var/lib/foreman/bootdisk"
     do_function_task "yum install shim-x64 -y"
@@ -296,6 +191,20 @@ do_register_katello() {
     do_function_task "curl --insecure --output katello-ca-consumer-latest.noarch.rpm https://katello.tanix.nl/pub/katello-ca-consumer-latest.noarch.rpm"
     do_function_task "yum localinstall katello-ca-consumer-latest.noarch.rpm -y"
     do_function_task "subscription-manager register --org=\"Tanix\" --activationkey=\"CentOS_7_x_Production_Key\""
+}
+
+do_fix_ipxe() {
+    local template_id
+    template_id=$(hammer --no-headers template list --fields Id,Name --search "kickstart_kernel_options" | grep "kickstart_kernel_options" | cut -d '|' -f 1 | awk '{$1=$1};1')
+    
+    do_function_task "hammer template update --id ${template_id} --locked 0"
+    do_function_task "hammer template dump --id ${template_id} > /tmp/kickstart_kernel_options"
+    do_function_task "sed -i '/^\s*os_minor = @host\.operatingsystem\.minor\.to_i\s*$/d' /tmp/kickstart_kernel_options"
+    do_function_task "sed -i '/^\s*major = @host\.operatingsystem\.major\.to_i\s*$/d' /tmp/kickstart_kernel_options"
+    do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/kickstart_kernel_options_input"
+    do_function_task "awk '/^\s*os_major = @host\.operatingsystem\.major\.to_i\s*$/{system(\"cat /tmp/kickstart_kernel_options_input\");next}1' /tmp/kickstart_kernel_options > /tmp/kickstart_kernel_options_new"
+    do_function_task "hammer template update --id ${template_id} --file /tmp/kickstart_kernel_options_new"
+    do_function_task "hammer template update --id ${template_id} --locked 1"
 }
 
 do_create_host() {
@@ -471,6 +380,7 @@ fi
 # Hide cursor
 tput civis
 
+if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -531,11 +441,11 @@ do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
 ## Create Katello setup for Katello Client 7
 do_function "Create Katello setup for Katello Client 7" "do_populate_katello_client"
 
-## Create Katello setup for CentOS 7.8
-#do_function "Create Katello setup for CentOS 7.8" "do_populate_katello \"7.8\""
-
 ## Create Katello setup for CentOS 7.x
-do_function "Create Katello setup for CentOS 7.x" "do_populate_katello \"7.x\""
+do_task "Create Katello setup for CentOS 7.x" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s 7.x"
+
+## Create Katello setup for CentOS 8.x
+do_task "Create Katello setup for CentOS 8.x" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s 8.x"
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
@@ -548,9 +458,13 @@ do_function "Register katello host" "do_register_katello"
 
 # Change destroy setting
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
+fi
+
+# Fix CentOS >= 8.3 issue with iPXE
+do_function "Fix CentOS >= 8.3 issue with iPXE" "do_fix_ipxe"
 
 # Create test host
-do_function "Create test host" "do_create_host \"awk\" \"hg_production_home_7_x\" \"10.10.5.37\" \"${PASSWORD}\" \"3-Large\""
+do_function "Create test host" "do_create_host \"awk\" \"hg_production_home_8_x\" \"10.10.5.37\" \"${PASSWORD}\" \"1-Small\""
 
 # Restore cursor
 tput cvvis
