@@ -428,6 +428,9 @@ do_function "Install Katello service" "do_install_katello \"${PASSWORD}\""
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"
 
+## Install JQ
+do_task "Install JQ" "yum install jq -y"
+
 ## Update system (again)
 do_task "Update system" "yum update -y"
 
