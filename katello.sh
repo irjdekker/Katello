@@ -202,7 +202,7 @@ do_fix_ipxe() {
     do_function_task "sed -i '/^\s*os_minor = @host\.operatingsystem\.minor\.to_i\s*$/d' /tmp/kickstart_kernel_options"
     do_function_task "sed -i '/^\s*major = @host\.operatingsystem\.major\.to_i\s*$/d' /tmp/kickstart_kernel_options"
     do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/kickstart_kernel_options_input"
-    do_function_task "awk '/^\s*os_major = @host\.operatingsystem\.major\.to_i\s*$/{system(\"cat /tmp/kickstart_kernel_options_input\");next}1' /tmp/kickstart_kernel_options > /tmp/kickstart_kernel_options_new"
+    do_function_task "awk '/^\s*os_major = @host\.operatingsystem\.major\.to_i\s*$/{system(\"cat /tmp/kickstart_kernel_options_input\");next}\n1' /tmp/kickstart_kernel_options > /tmp/kickstart_kernel_options_new"
     do_function_task "hammer template update --id ${template_id} --file /tmp/kickstart_kernel_options_new"
     do_function_task "hammer template update --id ${template_id} --locked 1"
 }
