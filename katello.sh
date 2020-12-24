@@ -389,7 +389,6 @@ fi
 # Hide cursor
 tput civis
 
-if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -473,10 +472,6 @@ do_function "Fix CentOS >= 8.3 issue with iPXE" "do_fix_ipxe"
 
 # Create test host
 do_function "Create test host" "do_create_host \"awk\" \"hg_production_home_8_x\" \"10.10.5.37\" \"${PASSWORD}\" \"1-Small\""
-fi
-
-## Create Katello setup for CentOS 8.1
-do_task "Create Katello setup for CentOS 8.1" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s 8.1"
 
 # Restore cursor
 tput cvvis
