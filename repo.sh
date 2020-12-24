@@ -112,30 +112,27 @@ do_populate_katello() {
 
     ## Publish and promote content view
     do_function_task "hammer content-view publish --organization-id 1 --name \"CentOS ${OS_VERSION}\" --description \"Initial publishing\""
-    hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library" | while read -r lcm;
+    while read -r lcm;
     do
         do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS ${OS_VERSION}\" --version \"1.0\" --to-lifecycle-environment \"${lcm}\""
-    done
-    if [ $? -ne 0 ]; then exit 1; fi
+    done < <(hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library")
 
     ## Create Katello activation keys
-    hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library" | while read -r lcm;
+    while read -r lcm;
     do
         do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --unlimited-hosts"
-    done
-    if [ $? -ne 0 ]; then exit 1; fi    
+    done < <(hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library")   
 
     ## Assign activation keys to Katello subscription (current view)
     local sub_centos_id
     sub_centos_id=$(hammer --no-headers subscription list --fields Id --search "CentOS ${OS_VERSION} Linux x86_64" | awk '{$1=$1};1')
     local sub_katello_id
     sub_katello_id=$(hammer --no-headers subscription list --fields Id --search "Katello Client 7" | awk '{$1=$1};1')
-    hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library" | while read -r lcm;
+    while read -r lcm;
     do
         do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_centos_id}\""
         do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_katello_id}\""        
-    done  
-    if [ $? -ne 0 ]; then exit 1; fi
+    done < <(hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library") 
     
     ## Check Operating System
     if [[ ${tmpOS:0:1} == "8" ]] ; then
@@ -151,10 +148,10 @@ do_populate_katello() {
     fi
     
     ## Create Katello hostgroup
-    hammer --no-headers location list --fields Name | while read -r location; 
+    while read -r location; 
     do
         domain_id=$(hammer --no-headers domain list --organization-id 1 --location "$location" --fields Id | awk '{$1=$1};1')
-        hammer --no-headers lifecycle-environment list --fields Name | grep -v "Library" | while read -r lcm;
+        while read -r lcm;
         do
             lcm_lower=$(echo "$lcm" | tr "[:upper:]" "[:lower:]")
             location_lower=$(echo "$location" | tr "[:upper:]" "[:lower:]")
@@ -165,10 +162,8 @@ do_populate_katello() {
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"yum-config-manager-disable-repo\" --parameter-type boolean --value \"true\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"enable-epel\" --parameter-type boolean --value \"false\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_${lcm}_Key\""            
-        done
-        if [ $? -ne 0 ]; then exit 1; fi
-    done
-    if [ $? -ne 0 ]; then exit 1; fi    
+        done < <(hammer --no-headers lifecycle-environment list --fields Name | grep -v "Library")
+    done < <(hammer --no-headers location list --fields Name)   
 }
 
 print_padded_text() {
