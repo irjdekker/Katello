@@ -389,6 +389,7 @@ fi
 # Hide cursor
 tput civis
 
+if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -433,6 +434,7 @@ do_task "Update system" "yum update -y"
 
 ## Create Katello compute resource (vCenter)
 do_function "Create Katello compute resource (vCenter)" "do_compute_resource"
+fi
 
 ## Update Katello compute profiles
 do_function "Update Katello compute profiles" "do_compute_profiles"
