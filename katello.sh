@@ -224,7 +224,7 @@ do_create_host() {
     
     while read -r repo_id;
     do
-        if curl -u "admin:${PASSWORD}" -s "https://katello.tanix.nl/katello/api/v2/repositories/${repo_id}" | jq | grep 'bootable' | grep 'true'; then 
+        if curl -u "admin:${PASSWORD}" -s "https://katello.tanix.nl/katello/api/v2/repositories/${repo_id}" | jq | grep 'bootable' | grep 'true' > /dev/null; then 
             repository_id="${repo_id}"
             break
         fi
@@ -389,7 +389,6 @@ fi
 # Hide cursor
 tput civis
 
-if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -467,7 +466,6 @@ do_function "Register katello host" "do_register_katello"
 
 # Change destroy setting
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
-fi
 
 # Fix CentOS >= 8.3 issue with iPXE
 do_function "Fix CentOS >= 8.3 issue with iPXE" "do_fix_ipxe"
