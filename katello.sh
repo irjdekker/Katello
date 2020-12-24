@@ -220,17 +220,28 @@ do_create_host() {
     PROFILE="$5"
 
     hostgroup_id=$(hammer --no-headers hostgroup list --fields Id --search "${HOSTGROUP}" | awk '{$1=$1};1')
-    content_view=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    repository=$(hammer content-view info --organization-id 1 --name "${content_view}" --fields "Yum Repositories/Name" | grep " OS " | cut -d ":" -f 2 | awk '{$1=$1};1')
-    repository_id=$(hammer --no-headers repository list --name "${repository}" --fields Id | awk '{$1=$1};1')
+    content_view=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1') 
     
-    if [ -n "${PROFILE}" ]
-    then
+    while read -r repo_id;
+    do
+        if curl -u "admin:${PASSWORD}" -s "https://katello.tanix.nl/katello/api/v2/repositories/${repo_id}" | jq | grep 'bootable' | grep 'true'; then 
+            repository_id="${repo_id}"
+            break
+        fi
+    done < <(hammer content-view info --organization-id 1 --name "${content_view}" --fields "Yum Repositories/Id" | grep "ID:" | cut -d ':' -f 2 | awk '{$1=$1};1')
+    
+    if [ -z "${repository_id}" ]; then
+        exit 1
+    fi
+    
+    if [ -n "${PROFILE}" ]; then
         compute_profile="${PROFILE}"
     else
         compute_profile=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
     fi  
 
+    echo "hammer host create --name \"${NAME}\" --organization \"Tanix\" --location \"Home\" --hostgroup-id \"${hostgroup_id}\" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${PASSWORD}\" --ip \"${IP}\" --compute-attributes \"start=1\""
+    
     do_function_task "hammer host create --name \"${NAME}\" --organization \"Tanix\" --location \"Home\" --hostgroup-id \"${hostgroup_id}\" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${PASSWORD}\" --ip \"${IP}\" --compute-attributes \"start=1\""
 }
 
@@ -272,7 +283,7 @@ print_task() {
 
     PRINTTEXT+="${TEXT}"
 
-    if [ "${NEWLINE}" = "true" ] ; then
+    if [ "${NEWLINE}" = "true" ]; then
         PRINTTEXT+="\n"
     fi
 
@@ -458,10 +469,10 @@ do_function "Register katello host" "do_register_katello"
 
 # Change destroy setting
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
-fi
 
 # Fix CentOS >= 8.3 issue with iPXE
 do_function "Fix CentOS >= 8.3 issue with iPXE" "do_fix_ipxe"
+fi
 
 # Create test host
 do_function "Create test host" "do_create_host \"awk\" \"hg_production_home_8_x\" \"10.10.5.37\" \"${PASSWORD}\" \"1-Small\""
