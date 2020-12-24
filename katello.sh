@@ -202,7 +202,7 @@ do_fix_ipxe() {
     do_function_task "sed -i '/^\s*os_minor = @host\.operatingsystem\.minor\.to_i\s*$/d' /tmp/kickstart_kernel_options"
     do_function_task "sed -i '/^\s*major = @host\.operatingsystem\.major\.to_i\s*$/d' /tmp/kickstart_kernel_options"
     do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/kickstart_kernel_options_input"
-    do_function_task "awk '/^\s*os_major = @host\.operatingsystem\.major\.to_i\s*$/{system(\"cat /tmp/kickstart_kernel_options_input\");next}\n1' /tmp/kickstart_kernel_options > /tmp/kickstart_kernel_options_new"
+    do_function_task "awk '/^\s*os_major = @host\.operatingsystem\.major\.to_i\s*$/{system(\"cat /tmp/kickstart_kernel_options_input\");next}1' /tmp/kickstart_kernel_options > /tmp/kickstart_kernel_options_new"
     do_function_task "hammer template update --id ${template_id} --file /tmp/kickstart_kernel_options_new"
     do_function_task "hammer template update --id ${template_id} --locked 1"
 }
@@ -389,6 +389,7 @@ fi
 # Hide cursor
 tput civis
 
+if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -466,6 +467,7 @@ do_function "Register katello host" "do_register_katello"
 
 # Change destroy setting
 do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_host_delete\" --value \"yes\""
+fi
 
 # Fix CentOS >= 8.3 issue with iPXE
 do_function "Fix CentOS >= 8.3 issue with iPXE" "do_fix_ipxe"
