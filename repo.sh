@@ -290,13 +290,13 @@ do_function() {
 
 echo 'Welcome to Katello installer'
 
-## Check if password is specified
+## Check if version is specified
 if [[ $# -eq 0 ]]; then
     echo -n "Version: " 
     read -rs VERSION
     echo
 
-    ## Check if password is specified
+    ## Check if version is specified
     if [[ -z "${VERSION}" ]]; then
         echo "No version supplied"
         exit 1
