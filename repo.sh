@@ -103,6 +103,8 @@ do_populate_katello() {
                     ## Add repository to content view
                     do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS ${OS_VERSION}\" --product \"CentOS ${OS_VERSION} Linux x86_64\" --repository \"CentOS ${OS_VERSION} ${tmpName} x86_64\""                        
                 done
+                
+                break
             fi
         fi
     done
@@ -138,7 +140,7 @@ do_populate_katello() {
     if [[ ${tmpOS:0:1} == "8" ]] ; then
         os_new_id=$(hammer --no-headers os list --fields Id --search "CentOS-8" | awk '{$1=$1};1')
         if [ -z "${os_new_id}" ]; then
-            os_old_id=$(hammer --no-headers os list --fields Id --search "CentOS-Linux-8" | awk '{$1=$1};1')
+            os_old_id=$(hammer --no-headers os list --fields Id --search "CentOS_Linux-8" | awk '{$1=$1};1')
             if [ -n "${os_old_id}" ]; then
                 do_function_task "hammer os update --id ${os_old_id} --description \"CentOS-8\""
             else
