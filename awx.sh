@@ -60,10 +60,55 @@ do_setup_ntp() {
     do_function_task "timedatectl status"
 }
 
-do_setup_firewall() {
-    do_function_task "firewall-cmd --add-port={80,443}/tcp --permanent"
-    do_function_task "firewall-cmd --reload"
-    do_function_task "firewall-cmd --list-all"
+do_disable_firewall() {
+    do_function_task "systemctl stop firewalld"
+    do_function_task "systemctl disable firewalld"
+}
+
+do_disable_selinux() {
+    do_function_task "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
+    do_function_task "setenforce 0"
+    do_function_task "sestatus | grep mode"
+}
+
+do_add_repositories() {
+    do_function_task "dnf install epel-release -y"
+    do_function_task "dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo -y"
+}
+
+do_setup_docker() {
+    do_function_task "dnf install docker-ce -y"
+    do_function_task "systemctl start docker"
+    do_function_task "systemctl enable docker"
+    do_function_task "systemctl --no-pager status docker"
+}
+
+do_install_docker_compose() {
+    do_function_task "pip3 install --upgrade pip"
+    do_function_task "pip3 install docker-compose"
+}
+
+do_clone_awx() {
+    do_function_task "git clone https://github.com/ansible/awx.git"
+    do_function_task "cd awx"
+    do_function_task "git clone https://github.com/ansible/awx-logos.git"
+    do_function_task "cd installer"
+}
+
+do_install_playbook() {
+    do_function_task_retry "ansible-playbook -i inventory install.yml -vv" "3"
+}
+
+do_update_inventory() {
+    local PASSWORD
+    PASSWORD="$1"
+    local SECRET_KEY
+    SECRET_KEY=$(openssl rand -base64 30)
+    do_function_task "sed -i \"s/^\s*admin_password=password\s*$/admin_password=${PASSWORD}/g\" /root/awx/installer/inventory"
+    do_function_task "sed -i \"s/^\s*secret_key=awxsecret\s*$/secret_key=${SECRET_KEY}/g\" /root/awx/installer/inventory"
+    do_function_task "sed -i 's/^.*awx_official.*$/awx_official=true/g\' /root/awx/installer/inventory"
+    do_function_task "sed -i 's/^.*awx_alternate_dns_servers.*$/awx_alternate_dns_servers=\"10.10.5.1\"/g' /root/awx/installer/inventory"
+    do_function_task "sed -i 's/^.*\(project_data_dir.*\)$/\1/g' /root/awx/installer/inventory"
 }
 
 print_padded_text() {
@@ -190,7 +235,7 @@ echo 'Welcome to AWX installer'
 
 ## Check if password is specified
 if [[ $# -eq 0 ]]; then
-    echo -n "Password: " 
+    echo -n "Password: "
     read -rs PASSWORD
     echo
 
@@ -224,14 +269,47 @@ do_function "Setup chrony" "do_setup_chrony"
 ## Setup NTP
 do_function "Setup NTP" "do_setup_ntp"
 
-## Setup firewall for Katello
-do_function "Setup firewall for AWX" "do_setup_firewall"
+## Disable firewalld for AWX
+do_function "Disable firewalld for AWX" "do_disable_firewall"
+
+## Disable SELinux for AWX
+do_function "Disable SELinux for AWX" "do_disable_selinux"
 
 ## Update system
 do_task "Update system" "yum update -y"
 
+## Add repositories for AWX
+do_function "Add repositories for AWX" "do_add_repositories"
+
+## Install required packages
+do_task "Install required packages" "dnf install git gcc gcc-c++ ansible nodejs gettext device-mapper-persistent-data lvm2 bzip2 python3-pip wget vim curl -y"
+
+## Install and enable docker service
+do_function "Install and enable docker service" "do_setup_docker"
+
+## Install docker-compose
+do_function "Install docker-compose" "do_install_docker_compose"
+
+## Correct Python version
+do_task "Correct Python version" "alternatives --set python /usr/bin/python3"
+
+## Clone AWX Git repository
+do_function "Clone AWX Git repository" "do_clone_awx"
+
+## Create required folders
+do_task "Create required folders" "mkdir -p /var/lib/awx/projects && mkdir -p /var/lib/pgdocker"
+
+## Update inventory file
+do_function "Update inventory file" "do_update_inventory"
+
+## Install AWX
+do_function "Install AWX" "do_install_playbook"
+
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"
+
+## Install JQ
+do_task "Install JQ" "yum install jq -y"
 
 ## Update system (again)
 do_task "Update system" "yum update -y"

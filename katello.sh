@@ -139,7 +139,7 @@ do_centos7_credential() {
     do_function_task "mkdir -p /etc/pki/rpm-gpg/import"
     do_function_task "cd /etc/pki/rpm-gpg/import/"
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://mirror.1000mbps.com/centos/RPM-GPG-KEY-CentOS-7"
-    do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-7\" --name \"RPM-GPG-KEY-CentOS-7\""    
+    do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-7\" --name \"RPM-GPG-KEY-CentOS-7\""
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://mirror.1000mbps.com/centos/RPM-GPG-KEY-CentOS-Official"
     do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-Official\" --name \"RPM-GPG-KEY-CentOS-8\""
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ https://yum.theforeman.org/releases/2.2/RPM-GPG-KEY-foreman"
@@ -196,7 +196,7 @@ do_register_katello() {
 do_fix_ipxe() {
     local template_id
     template_id=$(hammer --no-headers template list --fields Id,Name --search "kickstart_kernel_options" | grep "kickstart_kernel_options" | cut -d '|' -f 1 | awk '{$1=$1};1')
-    
+
     do_function_task "hammer template update --id ${template_id} --locked 0"
     do_function_task "hammer template dump --id ${template_id} > /tmp/kickstart_kernel_options"
     do_function_task "sed -i '/^\s*os_minor = @host\.operatingsystem\.minor\.to_i\s*$/d' /tmp/kickstart_kernel_options"
@@ -220,26 +220,26 @@ do_create_host() {
     PROFILE="$5"
 
     hostgroup_id=$(hammer --no-headers hostgroup list --fields Id --search "${HOSTGROUP}" | awk '{$1=$1};1')
-    content_view=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1') 
-    
+    content_view=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')
+
     while read -r repo_id;
     do
-        if curl -u "admin:${PASSWORD}" -s "https://katello.tanix.nl/katello/api/v2/repositories/${repo_id}" | jq | grep 'bootable' | grep 'true' > /dev/null; then 
+        if curl -u "admin:${PASSWORD}" -s "https://katello.tanix.nl/katello/api/v2/repositories/${repo_id}" | jq | grep 'bootable' | grep 'true' > /dev/null; then
             repository_id="${repo_id}"
             break
         fi
     done < <(hammer content-view info --organization-id 1 --name "${content_view}" --fields "Yum Repositories/Id" | grep "ID:" | cut -d ':' -f 2 | awk '{$1=$1};1')
-    
+
     if [ -z "${repository_id}" ]; then
         exit 1
     fi
-    
+
     if [ -n "${PROFILE}" ]; then
         compute_profile="${PROFILE}"
     else
         compute_profile=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
-    fi  
-    
+    fi
+
     do_function_task "hammer host create --name \"${NAME}\" --organization \"Tanix\" --location \"Home\" --hostgroup-id \"${hostgroup_id}\" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${PASSWORD}\" --ip \"${IP}\" --compute-attributes \"start=1\""
 }
 
@@ -367,7 +367,7 @@ echo 'Welcome to Katello installer'
 
 ## Check if password is specified
 if [[ $# -eq 0 ]]; then
-    echo -n "Password: " 
+    echo -n "Password: "
     read -rs PASSWORD
     echo
 
@@ -474,7 +474,7 @@ do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_hos
 do_function "Fix CentOS >= 8.3 issue with iPXE" "do_fix_ipxe"
 
 # Create test host
-do_function "Create test host" "do_create_host \"awk\" \"hg_production_home_8_x\" \"10.10.5.37\" \"${PASSWORD}\" \"1-Small\""
+do_function "Create test host" "do_create_host \"awk\" \"hg_production_home_8_x\" \"10.10.5.37\" \"${PASSWORD}\" \"3-Large\""
 
 # Restore cursor
 tput cvvis
