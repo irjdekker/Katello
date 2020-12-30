@@ -104,9 +104,9 @@ do_update_inventory() {
     PASSWORD="$1"
     local SECRET_KEY
     SECRET_KEY=$(openssl rand -base64 30 | sed 's/[\\&*./+!]/\\&/g')
-    do_function_task "sed -i \"s/^\s*admin_password=password\s*$/admin_password=${PASSWORD}/g\" /root/awx/installer/inventory"
-    do_function_task "sed -i \"s/^\s*secret_key=awxsecret\s*$/secret_key=${SECRET_KEY}/g\" /root/awx/installer/inventory"
-    do_function_task "sed -i 's/^.*awx_official.*$/awx_official=true/g\' /root/awx/installer/inventory"
+    # do_function_task "sed -i \"s/^\s*admin_password=password\s*$/admin_password=${PASSWORD}/g\" /root/awx/installer/inventory"
+    # do_function_task "sed -i \"s/^\s*secret_key=awxsecret\s*$/secret_key=${SECRET_KEY}/g\" /root/awx/installer/inventory"
+    do_function_task "sed -i 's/^.*awx_official.*$/awx_official=true/g' /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*awx_alternate_dns_servers.*$/awx_alternate_dns_servers=\"10.10.5.1\"/g' /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*\(project_data_dir.*\)$/\1/g' /root/awx/installer/inventory"
 }
