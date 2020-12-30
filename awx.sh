@@ -108,7 +108,8 @@ do_update_inventory() {
 }
 
 do_install_playbook() {
-    do_function_task_retry "ansible-playbook -i inventory install.yml -vv" "3" "300"
+    do_function_task "sed -i \"s|/usr/bin/launch_awx_task.sh|/bin/bash -c 'sleep 120 \&\& exec /usr/bin/launch_awx_task.sh'|g\" ./roles/local_docker/templates/docker-compose.yml.j2"
+    do_function_task_retry "ansible-playbook -i inventory install.yml -vv" "3" "120"
 }
 
 print_padded_text() {
