@@ -95,10 +95,6 @@ do_clone_awx() {
     do_function_task "cd installer"
 }
 
-do_install_playbook() {
-    do_function_task_retry "ansible-playbook -i inventory install.yml -vv" "3"
-}
-
 do_update_inventory() {
     local PASSWORD
     PASSWORD="$1"
@@ -109,6 +105,10 @@ do_update_inventory() {
     do_function_task "sed -i 's/^.*awx_official.*$/awx_official=true/g' /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*awx_alternate_dns_servers.*$/awx_alternate_dns_servers=\"10.10.5.1\"/g' /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*\(project_data_dir.*\)$/\1/g' /root/awx/installer/inventory"
+}
+
+do_install_playbook() {
+    do_function_task_retry "ansible-playbook -i inventory install.yml -vv" "3" "300"
 }
 
 print_padded_text() {
@@ -188,13 +188,19 @@ do_function_task_retry() {
     local COUNT=0
     local RETRY
     RETRY="$2"
+    local TIMEOUT
+    if [[ -z "$3" ]]; then
+        TIMEOUT="60"
+    else
+        TIMEOUT="$3"
+    fi
 
     while :
     do
         if ! run_cmd "$1"; then
             COUNT=$(( COUNT + 1 ))
             print_task "${MESSAGE} (${COUNT})" -3 false
-            sleep 60
+            sleep "${TIMEOUT}"
             if (( COUNT == RETRY )); then
                 print_task "${MESSAGE}" 1 true
             fi
