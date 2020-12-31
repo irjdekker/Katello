@@ -111,7 +111,7 @@ do_update_inventory() {
 
 do_install_playbook() {
     do_function_task "sed -i \"s|/usr/bin/awx-manage create_preload_data|sleep 600 \&\& exec /usr/bin/awx-manage create_preload_data'|g\" ./roles/local_docker/tasks/compose.yml"
-    do_function_task_retry "ansible-playbook -i inventory install.yml -vv" "3" "120"
+    do_function_task "ansible-playbook -i inventory install.yml -vv"
 }
 
 print_padded_text() {
