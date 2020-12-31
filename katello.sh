@@ -218,6 +218,8 @@ do_create_host() {
     PASSWORD="$4"
     local PROFILE
     PROFILE="$5"
+    local RETURN
+    RETURN="1"
 
     hostgroup_id=$(hammer --no-headers hostgroup list --fields Id --search "${HOSTGROUP}" | awk '{$1=$1};1')
     content_view=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Content View/Name" | grep -i "name" | cut -d ":" -f 2 | awk '{$1=$1};1')
@@ -241,6 +243,21 @@ do_create_host() {
     fi
 
     do_function_task "hammer host create --name \"${NAME}\" --organization \"Tanix\" --location \"Home\" --hostgroup-id \"${hostgroup_id}\" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${PASSWORD}\" --ip \"${IP}\" --compute-attributes \"start=1\""
+
+    for((i=1;i<=15;++i)); do
+        sleep 60
+        if ssh-keyscan "${IP}" 2>&1 | grep -v "No route to host" | grep -v "^$" > /dev/null; then
+            RETURN="0"
+            break
+        else
+            echo "Waiting for $i minutes on host" >> "${LOGFILE}" 2>&1
+        fi
+    done
+
+    if [ "${RETURN}" = "1" ]; then
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
 }
 
 print_padded_text() {
