@@ -114,6 +114,90 @@ do_install_playbook() {
     do_function_task "ansible-playbook -i inventory install.yml -vv"
 }
 
+do_configure_awx() {
+    local PASSWORD
+    PASSWORD="$1"
+
+    export TOWER_HOST=http://localhost
+    local EXPORT
+    EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$PASSWORD" awx login -f human)
+    eval "${EXPORT}"
+    awx config
+
+    do_function_task "awx organizations create --name Tanix --description Tanix --max_hosts 100"
+
+    local ORGANIZATION_ID
+    if [ "$(awx organizations list --name Tanix -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+        ORGANIZATION_ID=$(awx organizations list --name Tanix -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+
+    do_function_task "awx teams create --name Dekker --description Dekker --organization ${ORGANIZATION_ID}"
+
+    local TEAM_ID
+    if [ "$(awx teams list --name Dekker -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+        TEAM_ID=$(awx teams list --name Dekker -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+
+    do_function_task "awx users create --username irjdekker --email ir.j.dekker@gmail.com --first_name Jeroen --last_name Dekker --password ${PASSWORD}"
+
+    local USER_ID
+    if [ "$(awx users list --username irjdekker -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+        USER_ID=$(awx users list --username irjdekker -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+
+    do_function_task "awx users grant --organization ${ORGANIZATION_ID} --role admin ${USER_ID}"
+    do_function_task "awx users grant --team ${TEAM_ID} --role member ${USER_ID}"
+
+    local CRED_TYPE_ID
+    if [ "$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+        CRED_TYPE_ID=$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+
+    do_function_task "awx credentials create --name katello_inventory --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{host: 'https://katello.tanix.nl', username: 'sync_inventory', password: 'Hwbod6ZS27IAMj'}\""
+
+    local CRED_ID
+    if [ "$(awx credentials get Katello -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+        CRED_ID=$(awx credentials get Katello -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+
+    do_function_task "awx inventory create --name \"Katello inventory\" --organization ${ORGANIZATION_ID}"
+
+    local INV_ID
+    if [ "$(awx inventory get \"Katello inventory\" -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+        INV_ID=$(awx inventory get \"Katello inventory\" -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+
+    do_function_task "awx inventory_sources create --name Katello --source satellite6 --credential ${CRED_ID} --update_on_launch true --inventory ${INV_ID}"
+
+    local INV_SRC_ID
+    if [ "$(awx inventory_sources get Katello -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+        INV_SRC_ID=$(awx inventory_sources get Katello -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+
+    do_function_task "awx inventory_sources update ${INV_SRC_ID}"
+}
+
 print_padded_text() {
     pad=$(printf '%0.1s' "*"{1..70})
     padlength=140
@@ -313,6 +397,12 @@ do_function "Update inventory file" "do_update_inventory \"${PASSWORD}\""
 
 ## Install AWX
 do_function "Install AWX" "do_install_playbook"
+
+## Install AWX CLI
+do_task "Install AWX CLI" "pip3 install awxkit"
+
+## Configure AWX
+do_function "Configure AWX" "do_configure_awx \"${PASSWORD}\""
 
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"

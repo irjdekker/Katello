@@ -207,6 +207,23 @@ do_fix_ipxe() {
     do_function_task "hammer template update --id ${template_id} --locked 1"
 }
 
+do_inventory_account() {
+    do_function_task "hammer user create --organization-id 1 --location-id 2 --login sync_inventory --password Hwbod6ZS27IAMj --mail sync@tanix.nl --auth-source-id 1"
+    do_function_task "hammer role create --organization-id 1 --location-id 2 --name \"Sync inventory\""
+    local PERM_ID1
+    PERM_ID1=$(hammer --no-headers filter available-permissions --fields Id --search view_hosts | awk '{$1=$1};1')
+    do_function_task "hammer filter create --role \"Sync inventory\" --permission-ids ${PERM_ID1}}"
+    local PERM_ID2
+    PERM_ID2=$(hammer --no-headers filter available-permissions --fields Id --search view_hostgroups | awk '{$1=$1};1')
+    do_function_task "hammer filter create --role \"Sync inventory\" --permission-ids ${PERM_ID2}}"
+    local PERM_ID3
+    PERM_ID3=$(hammer --no-headers filter available-permissions --fields Id --search view_facts | awk '{$1=$1};1')
+    do_function_task "hammer filter create --role \"Sync inventory\" --permission-ids ${PERM_ID3}}"
+    local USER_ID
+    USER_ID=$(hammer --no-headers user list --fields Id --search sync_inventory | awk '{$1=$1};1')
+    do_function_task "hammer user add-role --id ${USER_ID} --role \"Sync inventory\""
+}
+
 do_create_host() {
     local NAME
     NAME="$1"
@@ -489,6 +506,9 @@ do_task "Change destroy setting" "hammer settings set --name \"destroy_vm_on_hos
 
 # Fix CentOS >= 8.3 issue with iPXE
 do_function "Fix CentOS >= 8.3 issue with iPXE" "do_fix_ipxe"
+
+# Create inventory account
+do_function "Create inventory account" "do_inventory_account"
 
 # Create test host
 do_function "Create test host" "do_create_host \"awk\" \"hg_production_home_8_x\" \"10.10.5.37\" \"${PASSWORD}\" \"3-Large\""
