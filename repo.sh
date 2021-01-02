@@ -251,13 +251,19 @@ do_function_task_retry() {
     local COUNT=0
     local RETRY
     RETRY="$2"
+    local TIMEOUT
+    if [[ -z "$3" ]]; then
+        TIMEOUT="60"
+    else
+        TIMEOUT="$3"
+    fi
 
     while :
     do
         if ! run_cmd "$1"; then
             COUNT=$(( COUNT + 1 ))
             print_task "${MESSAGE} (${COUNT})" -3 false
-            sleep 60
+            sleep "${TIMEOUT}"
             if (( COUNT == RETRY )); then
                 print_task "${MESSAGE}" 1 true
             fi

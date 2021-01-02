@@ -115,15 +115,15 @@ do_install_katello() {
 }
 
 do_create_organization() {
-    # do_function_task "hammer organization create --name Tanix --label Tanix --description Tanix"
+    do_function_task "hammer organization create --name Tanix --label Tanix --description Tanix"
     ORG_ID=$(hammer --no-headers organization list --search Tanix --fields Id | awk '{$1=$1};1')
     export ORG_ID
-    # do_function_task "hammer location create --name Home"
+    do_function_task "hammer location create --name Home"
     LOC_ID=$(hammer --no-headers location list --search Home --fields Id | awk '{$1=$1};1')
     export LOC_ID
-    # do_function_task "hammer location add-organization --name Home --organization Tanix"
-    # do_function_task "hammer role clone --name \"Organization admin\" --new-name \"Tanix admin\""
-    # do_function_task "hammer role update --name \"Tanix admin\" --organization-ids \"${ORG_ID}\" --location-ids \"${LOC_ID}\""
+    do_function_task "hammer location add-organization --name Home --organization Tanix"
+    do_function_task "hammer role clone --name \"Organization admin\" --new-name \"Tanix admin\""
+    do_function_task "hammer role update --name \"Tanix admin\" --organization-ids \"${ORG_ID}\" --location-ids \"${LOC_ID}\""
     do_function_task "hammer user create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --default-organization-id \"${ORG_ID}\" --default-location-id \"${LOC_ID}\" --login tanix-admin --password j7ktSn3zgItAFz --mail tanix.admin@tanix.nl --auth-source-id 1"
     local USER_ID
     USER_ID=$(hammer --no-headers user list --fields Id --search tanix-admin | awk '{$1=$1};1')
@@ -143,9 +143,9 @@ do_compute_profiles() {
     local network_id
     network_id=$(hammer --no-headers compute-resource networks --organization-id "${ORG_ID}" --location-id "${LOC_ID}" --name "${VMWARE}" --fields Id,Name | grep "tanix-5" | cut -d '|' -f 1 | awk '{$1=$1};1')
 
-    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"1-Small\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5"
-    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"2-Medium\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5"
-    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"3-Large\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=4096,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5"
+    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"1-Small\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5" "120"
+    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"2-Medium\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5" "120"
+    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"3-Large\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=4096,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5" "120"
 }
 
 do_create_subnet() {
@@ -177,17 +177,17 @@ do_populate_katello_client() {
     SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
 
     ## Create Katello client product
-    do_function_task "hammer product create --organization-id \"${ORG_ID}\" --name \"Katello Client 7\""
+    do_function_task "hammer product create --organization-id \"${ORG_ID}\" --name \"Katello Client\""
 
     ## Create Katello client repositories
-    do_function_task "hammer repository create --organization-id \"${ORG_ID}\" --product \"Katello Client 7\" --name \"Katello Client 7\" --label \"Katello_Client_7\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-foreman\" --url \"https://yum.theforeman.org/client/2.2/el7/x86_64/\" --mirror-on-sync \"no\""
+    do_function_task "hammer repository create --organization-id \"${ORG_ID}\" --product \"Katello Client\" --name \"Katello Client\" --label \"Katello_Client\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-foreman\" --url \"https://yum.theforeman.org/client/2.3/el7/x86_64/\" --mirror-on-sync \"no\""
 
     ## Create Katello client synchronization plan
-    do_function_task "hammer sync-plan create --organization-id \"${ORG_ID}\" --name \"Daily Sync Katello Client 7\" --interval daily --enabled true --sync-date \"2020-01-01 ${SYNC_TIME}\""
-    do_function_task "hammer product set-sync-plan --organization-id \"${ORG_ID}\" --name \"Katello Client 7\" --sync-plan \"Daily Sync Katello Client 7\""
+    do_function_task "hammer sync-plan create --organization-id \"${ORG_ID}\" --name \"Daily Sync Katello Client\" --interval daily --enabled true --sync-date \"2020-01-01 ${SYNC_TIME}\""
+    do_function_task "hammer product set-sync-plan --organization-id \"${ORG_ID}\" --name \"Katello Client\" --sync-plan \"Daily Sync Katello Client\""
 
     ## Synchronize Katello client repositories
-    do_function_task_retry "hammer repository synchronize --organization-id \"${ORG_ID}\" --product \"Katello Client 7\" --name \"Katello Client 7\"" "5"
+    do_function_task_retry "hammer repository synchronize --organization-id \"${ORG_ID}\" --product \"Katello Client\" --name \"Katello Client\"" "5" "120"
 }
 
 do_setup_bootdisks() {
@@ -373,13 +373,19 @@ do_function_task_retry() {
     local COUNT=0
     local RETRY
     RETRY="$2"
+    local TIMEOUT
+    if [[ -z "$3" ]]; then
+        TIMEOUT="60"
+    else
+        TIMEOUT="$3"
+    fi
 
     while :
     do
         if ! run_cmd "$1"; then
             COUNT=$(( COUNT + 1 ))
             print_task "${MESSAGE} (${COUNT})" -3 false
-            sleep 60
+            sleep "${TIMEOUT}"
             if (( COUNT == RETRY )); then
                 print_task "${MESSAGE}" 1 true
             fi
@@ -442,7 +448,6 @@ fi
 # Hide cursor
 tput civis
 
-if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -487,7 +492,6 @@ do_task "Install JQ" "yum install jq -y"
 
 ## Update system (again)
 do_task "Update system" "yum update -y"
-fi
 
 ## Create organization
 do_function "Create organization" "do_create_organization"
