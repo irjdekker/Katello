@@ -115,16 +115,16 @@ do_install_katello() {
 }
 
 do_create_organization() {
-    do_function_task "hammer organization create --name Tanix --label Tanix --description Tanix"
+    # do_function_task "hammer organization create --name Tanix --label Tanix --description Tanix"
     ORG_ID=$(hammer --no-headers organization list --search Tanix --fields Id | awk '{$1=$1};1')
     export ORG_ID
-    do_function_task "hammer location create --name Home"
+    # do_function_task "hammer location create --name Home"
     LOC_ID=$(hammer --no-headers location list --search Home --fields Id | awk '{$1=$1};1')
     export LOC_ID
-    do_function_task "hammer location add-organization --name Home --organization Tanix"
-    do_function_task "hammer role clone --name \"Organization admin\" --new-name \"Tanix admin\""
-    do_function_task "hammer role update --name \"Tanix admin\" --organization-ids \"${ORG_ID}\" --location-ids \"${LOC_ID}\""
-    do_function_task "hammer user create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --default-organization-id \"${ORG_ID}\" --default-location-id \"${LOC_ID}\"--login tanix-admin --password j7ktSn3zgItAFz --mail tanix.admin@tanix.nl --auth-source-id 1"
+    # do_function_task "hammer location add-organization --name Home --organization Tanix"
+    # do_function_task "hammer role clone --name \"Organization admin\" --new-name \"Tanix admin\""
+    # do_function_task "hammer role update --name \"Tanix admin\" --organization-ids \"${ORG_ID}\" --location-ids \"${LOC_ID}\""
+    do_function_task "hammer user create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --default-organization-id \"${ORG_ID}\" --default-location-id \"${LOC_ID}\" --login tanix-admin --password j7ktSn3zgItAFz --mail tanix.admin@tanix.nl --auth-source-id 1"
     local USER_ID
     USER_ID=$(hammer --no-headers user list --fields Id --search tanix-admin | awk '{$1=$1};1')
     do_function_task "hammer user add-role --id \"${USER_ID}\" --role \"Tanix admin\""
@@ -442,6 +442,7 @@ fi
 # Hide cursor
 tput civis
 
+if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -486,6 +487,7 @@ do_task "Install JQ" "yum install jq -y"
 
 ## Update system (again)
 do_task "Update system" "yum update -y"
+fi
 
 ## Create organization
 do_function "Create organization" "do_create_organization"
