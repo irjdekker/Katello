@@ -114,43 +114,62 @@ do_install_katello() {
     do_function_task "foreman-maintain service status"
 }
 
+do_create_organization() {
+    do_function_task "hammer organization create --name Tanix --label Tanix --description Tanix"
+    ORG_ID=$(hammer --no-headers organization list --search Tanix --fields Id | awk '{$1=$1};1')
+    export ORG_ID
+    do_function_task "hammer location create --name Home"
+    LOC_ID=$(hammer --no-headers location list --search Home --fields Id | awk '{$1=$1};1')
+    export LOC_ID
+    do_function_task "hammer location add-organization --name Home --organization Tanix"
+    do_function_task "hammer role clone --name \"Organization admin\" --new-name \"Tanix admin\""
+    do_function_task "hammer role update --name \"Tanix admin\" --organization-ids \"${ORG_ID}\" --location-ids \"${LOC_ID}\""
+    do_function_task "hammer user create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --default-organization-id \"${ORG_ID}\" --default-location-id \"${LOC_ID}\"--login tanix-admin --password j7ktSn3zgItAFz --mail tanix.admin@tanix.nl --auth-source-id 1"
+    local USER_ID
+    USER_ID=$(hammer --no-headers user list --fields Id --search tanix-admin | awk '{$1=$1};1')
+    do_function_task "hammer user add-role --id \"${USER_ID}\" --role \"Tanix admin\""
+    do_function_task "sed -i \"s/^\(\s*:username:\s*\).*$/\1'tanix-admin'/\" /root/.hammer/cli.modules.d/foreman.yml"
+    do_function_task "sed -i \"s/^\(\s*:password:\s*\).*$/\1'j7ktSn3zgItAFz'/\" /root/.hammer/cli.modules.d/foreman.yml"
+}
+
 do_compute_resource() {
-    do_function_task "hammer compute-resource create --organization-id 1 --location-id 2 --name \"${VMWARE}\" --provider \"Vmware\" --server \"${VCENTER}\" --user \"${VMWARE_USER}\" --password \"${PASSWORD}\" --datacenter \"${VMWARE_DC}\""
-    do_function_task "curl -u admin:${PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://katello.tanix.nl/api/compute_resources/1/refresh_cache -X PUT"
+    do_function_task "hammer compute-resource create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --name \"${VMWARE}\" --provider \"Vmware\" --server \"${VCENTER}\" --user \"${VMWARE_USER}\" --password \"${PASSWORD}\" --datacenter \"${VMWARE_DC}\""
+    local RES_ID
+    RES_ID=$(hammer --no-headers compute-resource list --fields Id --search "${VMWARE}" | awk '{$1=$1};1')
+    do_function_task "curl -u admin:${PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://katello.tanix.nl/api/compute_resources/${RES_ID}/refresh_cache -X PUT"
 }
 
 do_compute_profiles() {
     local network_id
-    network_id=$(hammer --no-headers compute-resource networks --organization-id 1 --location-id 2 --name "${VMWARE}" --fields Id,Name | grep "tanix-5" | cut -d '|' -f 1 | awk '{$1=$1};1')
+    network_id=$(hammer --no-headers compute-resource networks --organization-id "${ORG_ID}" --location-id "${LOC_ID}" --name "${VMWARE}" --fields Id,Name | grep "tanix-5" | cut -d '|' -f 1 | awk '{$1=$1};1')
 
-    do_function_task_retry "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"1-Small\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5"
-    do_function_task_retry "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"2-Medium\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5"
-    do_function_task_retry "hammer compute-profile values create --organization-id 1 --location-id 2 --compute-profile \"3-Large\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=4096,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5"
+    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"1-Small\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5"
+    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"2-Medium\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5"
+    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"3-Large\" --compute-resource \"${VMWARE}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=4096,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"Datastore Non-SSD\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5"
 }
 
 do_create_subnet() {
     local domain_id
-    domain_id=$(hammer --no-headers domain list --organization-id 1 --location-id 2 --fields Id | awk '{$1=$1};1')
-
-    do_function_task "hammer subnet create --organization-id 1 --location-id 2 --domain-ids \"${domain_id}\" --name \"tanix-5\" --network-type \"IPv4\" --network \"10.10.5.0\" --prefix 24 --gateway \"10.10.5.1\" --dns-primary \"10.10.5.1\" --boot-mode \"Static\""
+    domain_id=$(hammer --no-headers domain list --organization-id "${ORG_ID}" --location-id "${LOC_ID}" --fields Id | awk '{$1=$1};1')
+    do_function_task "hammer subnet create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --domain-ids \"${domain_id}\" --name \"tanix-5\" --network-type \"IPv4\" --network \"10.10.5.0\" --prefix 24 --gateway \"10.10.5.1\" --dns-primary \"10.10.5.1\" --boot-mode \"Static\""
 }
 
 do_centos7_credential() {
     do_function_task "mkdir -p /etc/pki/rpm-gpg/import"
     do_function_task "cd /etc/pki/rpm-gpg/import/"
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://mirror.1000mbps.com/centos/RPM-GPG-KEY-CentOS-7"
-    do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-7\" --name \"RPM-GPG-KEY-CentOS-7\""
+    do_function_task "hammer gpg create --organization-id \"${ORG_ID}\" --key \"RPM-GPG-KEY-CentOS-7\" --name \"RPM-GPG-KEY-CentOS-7\""
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://mirror.1000mbps.com/centos/RPM-GPG-KEY-CentOS-Official"
-    do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-CentOS-Official\" --name \"RPM-GPG-KEY-CentOS-8\""
+    do_function_task "hammer gpg create --organization-id \"${ORG_ID}\" --key \"RPM-GPG-KEY-CentOS-Official\" --name \"RPM-GPG-KEY-CentOS-8\""
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ https://yum.theforeman.org/releases/2.2/RPM-GPG-KEY-foreman"
-    do_function_task "hammer gpg create --organization-id 1 --key \"RPM-GPG-KEY-foreman\" --name \"RPM-GPG-KEY-foreman\""
+    do_function_task "hammer gpg create --organization-id \"${ORG_ID}\" --key \"RPM-GPG-KEY-foreman\" --name \"RPM-GPG-KEY-foreman\""
 }
 
 do_lcm_setup() {
-    do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Development\" --label \"Development\" --prior \"Library\""
-    do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Test\" --label \"Test\" --prior \"Development\""
-    do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Acceptance\" --label \"Acceptance\" --prior \"Test\""
-    do_function_task "hammer lifecycle-environment create --organization-id 1 --name \"Production\" --label \"Production\" --prior \"Acceptance\""
+    do_function_task "hammer lifecycle-environment create --organization-id \"${ORG_ID}\" --name \"Development\" --label \"Development\" --prior \"Library\""
+    do_function_task "hammer lifecycle-environment create --organization-id \"${ORG_ID}\" --name \"Test\" --label \"Test\" --prior \"Development\""
+    do_function_task "hammer lifecycle-environment create --organization-id \"${ORG_ID}\" --name \"Acceptance\" --label \"Acceptance\" --prior \"Test\""
+    do_function_task "hammer lifecycle-environment create --organization-id \"${ORG_ID}\" --name \"Production\" --label \"Production\" --prior \"Acceptance\""
 }
 
 do_populate_katello_client() {
@@ -158,17 +177,17 @@ do_populate_katello_client() {
     SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
 
     ## Create Katello client product
-    do_function_task "hammer product create --organization-id 1 --name \"Katello Client 7\""
+    do_function_task "hammer product create --organization-id \"${ORG_ID}\" --name \"Katello Client 7\""
 
     ## Create Katello client repositories
-    do_function_task "hammer repository create --organization-id 1 --product \"Katello Client 7\" --name \"Katello Client 7\" --label \"Katello_Client_7\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-foreman\" --url \"https://yum.theforeman.org/client/2.2/el7/x86_64/\" --mirror-on-sync \"no\""
+    do_function_task "hammer repository create --organization-id \"${ORG_ID}\" --product \"Katello Client 7\" --name \"Katello Client 7\" --label \"Katello_Client_7\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"RPM-GPG-KEY-foreman\" --url \"https://yum.theforeman.org/client/2.2/el7/x86_64/\" --mirror-on-sync \"no\""
 
     ## Create Katello client synchronization plan
-    do_function_task "hammer sync-plan create --organization-id 1 --name \"Daily Sync Katello Client 7\" --interval daily --enabled true --sync-date \"2020-01-01 ${SYNC_TIME}\""
-    do_function_task "hammer product set-sync-plan --organization-id 1 --name \"Katello Client 7\" --sync-plan \"Daily Sync Katello Client 7\""
+    do_function_task "hammer sync-plan create --organization-id \"${ORG_ID}\" --name \"Daily Sync Katello Client 7\" --interval daily --enabled true --sync-date \"2020-01-01 ${SYNC_TIME}\""
+    do_function_task "hammer product set-sync-plan --organization-id \"${ORG_ID}\" --name \"Katello Client 7\" --sync-plan \"Daily Sync Katello Client 7\""
 
     ## Synchronize Katello client repositories
-    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"Katello Client 7\" --name \"Katello Client 7\"" "5"
+    do_function_task_retry "hammer repository synchronize --organization-id \"${ORG_ID}\" --product \"Katello Client 7\" --name \"Katello Client 7\"" "5"
 }
 
 do_setup_bootdisks() {
@@ -182,9 +201,9 @@ do_setup_bootdisks() {
 
 do_create_templates() {
     do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_packages"
-    do_function_task "hammer template create --name \"Kickstart default custom packages\" --organization-id 1 --location-id 2 --type snippet --locked 1 --file /tmp/Kickstart_default_custom_packages"
+    do_function_task "hammer template create --name \"Kickstart default custom packages\" --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --type snippet --locked 1 --file /tmp/Kickstart_default_custom_packages"
     do_function_task "wget -P /tmp/ https://raw.githubusercontent.com/irjdekker/Katello/master/Kickstart_default_custom_post"
-    do_function_task "hammer template create --name \"Kickstart default custom post\" --organization-id 1 --location-id 2 --type snippet --locked 1 --file /tmp/Kickstart_default_custom_post"
+    do_function_task "hammer template create --name \"Kickstart default custom post\" --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --type snippet --locked 1 --file /tmp/Kickstart_default_custom_post"
 }
 
 do_register_katello() {
@@ -208,8 +227,8 @@ do_fix_ipxe() {
 }
 
 do_inventory_account() {
-    do_function_task "hammer user create --organization-id 1 --location-id 2 --login sync_inventory --password Hwbod6ZS27IAMj --mail sync@tanix.nl --auth-source-id 1"
-    do_function_task "hammer role create --organization-id 1 --location-id 2 --name \"Sync inventory\""
+    do_function_task "hammer user create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --default-organization-id \"${ORG_ID}\" --default-location-id \"${LOC_ID}\" --login sync_inventory --password Hwbod6ZS27IAMj --mail sync@tanix.nl --auth-source-id 1"
+    do_function_task "hammer role create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --name \"Sync inventory\""
     local PERM_ID1
     PERM_ID1=$(hammer --no-headers filter available-permissions --fields Id --search view_hosts | awk '{$1=$1};1')
     do_function_task "hammer filter create --role \"Sync inventory\" --permission-ids ${PERM_ID1}}"
@@ -247,7 +266,7 @@ do_create_host() {
             repository_id="${repo_id}"
             break
         fi
-    done < <(hammer content-view info --organization-id 1 --name "${content_view}" --fields "Yum Repositories/Id" | grep "ID:" | cut -d ':' -f 2 | awk '{$1=$1};1')
+    done < <(hammer content-view info --organization-id "${ORG_ID}" --name "${content_view}" --fields "Yum Repositories/Id" | grep "ID:" | cut -d ':' -f 2 | awk '{$1=$1};1')
 
     if [ -z "${repository_id}" ]; then
         exit 1
@@ -259,7 +278,7 @@ do_create_host() {
         compute_profile=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
     fi
 
-    do_function_task "hammer host create --name \"${NAME}\" --organization \"Tanix\" --location \"Home\" --hostgroup-id \"${hostgroup_id}\" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${PASSWORD}\" --ip \"${IP}\" --compute-attributes \"start=1\""
+    do_function_task "hammer host create --name \"${NAME}\" --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --hostgroup-id \"${hostgroup_id}\" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"admin\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${PASSWORD}\" --ip \"${IP}\" --compute-attributes \"start=1\""
 
     for((i=1;i<=15;++i)); do
         sleep 60
@@ -467,6 +486,9 @@ do_task "Install JQ" "yum install jq -y"
 
 ## Update system (again)
 do_task "Update system" "yum update -y"
+
+## Create organization
+do_function "Create organization" "do_create_organization"
 
 ## Create Katello compute resource (vCenter)
 do_function "Create Katello compute resource (vCenter)" "do_compute_resource"

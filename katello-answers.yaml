@@ -24,8 +24,8 @@ foreman:
   initial_admin_email: ir.j.dekker@gmail.com
   initial_admin_locale:
   initial_admin_timezone:
-  initial_organization: Tanix
-  initial_location: Home
+  initial_organization: "Default Organization"
+  initial_location: "Default Location"
   max_keepalive_requests: 10000
   server_ssl_ca: "/etc/pki/katello/certs/katello-default-ca.crt"
   server_ssl_cert: "/etc/pki/katello/certs/katello-apache.crt"

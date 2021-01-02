@@ -58,16 +58,22 @@ do_populate_katello() {
     OS_NICE=${OS_VERSION//[^[:alnum:]-]/_}
     local SYNC_TIME
     SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
+    local USER_NAME
+    USER_NAME=$(grep "username" /root/.hammer/cli.modules.d/foreman.yml | sed "s/^[^']*'\([^']*\)'.*/\1/")
+    local ORG_NAME
+    ORG_NAME=$(hammer user info --login "${USER_NAME}" | grep "Default organization" | cut -d ':' -f 2 | awk '{$1=$1};1')
+    ORG_ID=$(hammer --no-headers organization list --search "${ORG_NAME}" --fields Id | awk '{$1=$1};1')
+    export ORG_ID
 
     ## Create Katello product
-    do_function_task "hammer product create --organization-id 1 --name \"CentOS ${OS_VERSION} Linux x86_64\""
+    do_function_task "hammer product create --organization-id \"${ORG_ID}\" --name \"CentOS ${OS_VERSION} Linux x86_64\""
 
     ## Create Katello synchronization plan
-    do_function_task "hammer sync-plan create --organization-id 1 --name \"Daily Sync CentOS ${OS_VERSION}\" --interval daily --enabled true --sync-date \"2020-01-01 ${SYNC_TIME}\""
-    do_function_task "hammer product set-sync-plan --organization-id 1 --name \"CentOS ${OS_VERSION} Linux x86_64\" --sync-plan \"Daily Sync CentOS ${OS_VERSION}\""
+    do_function_task "hammer sync-plan create --organization-id \"${ORG_ID}\" --name \"Daily Sync CentOS ${OS_VERSION}\" --interval daily --enabled true --sync-date \"2020-01-01 ${SYNC_TIME}\""
+    do_function_task "hammer product set-sync-plan --organization-id \"${ORG_ID}\" --name \"CentOS ${OS_VERSION} Linux x86_64\" --sync-plan \"Daily Sync CentOS ${OS_VERSION}\""
 
     ## Create Katello content view
-    do_function_task "hammer content-view create --organization-id 1 --name \"CentOS ${OS_VERSION}\" --label \"CentOS_${OS_NICE}\""
+    do_function_task "hammer content-view create --organization-id \"${ORG_ID}\" --name \"CentOS ${OS_VERSION}\" --label \"CentOS_${OS_NICE}\""
 
     ## Create Katello repositories
     for item in "${OSSETUP[@]}"
@@ -95,13 +101,13 @@ do_populate_katello() {
                     tmpLocation=${tmpArray[5+2*i]}
 
                     ## Create Katello repository
-                    do_function_task "hammer repository create --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} ${tmpName} x86_64\" --label \"CentOS_${OS_NICE}_${tmpName}_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"${tmpGPGKey}\" --url \"${tmpBaseUrl}${tmpLocation}\" --mirror-on-sync \"no\""
+                    do_function_task "hammer repository create --organization-id \"${ORG_ID}\" --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} ${tmpName} x86_64\" --label \"CentOS_${OS_NICE}_${tmpName}_x86_64\" --content-type \"yum\" --download-policy \"immediate\" --gpg-key \"${tmpGPGKey}\" --url \"${tmpBaseUrl}${tmpLocation}\" --mirror-on-sync \"no\""
 
                     ## Synchronize Katello repository
-                    do_function_task_retry "hammer repository synchronize --organization-id 1 --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} ${tmpName} x86_64\"" "5"
+                    do_function_task_retry "hammer repository synchronize --organization-id \"${ORG_ID}\" --product \"CentOS ${OS_VERSION} Linux x86_64\" --name \"CentOS ${OS_VERSION} ${tmpName} x86_64\"" "5"
 
                     ## Add repository to content view
-                    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS ${OS_VERSION}\" --product \"CentOS ${OS_VERSION} Linux x86_64\" --repository \"CentOS ${OS_VERSION} ${tmpName} x86_64\""
+                    do_function_task "hammer content-view add-repository --organization-id \"${ORG_ID}\" --name \"CentOS ${OS_VERSION}\" --product \"CentOS ${OS_VERSION} Linux x86_64\" --repository \"CentOS ${OS_VERSION} ${tmpName} x86_64\""
                 done
 
                 break
@@ -110,19 +116,19 @@ do_populate_katello() {
     done
 
     ## Add Katello repositories to content view
-    do_function_task "hammer content-view add-repository --organization-id 1 --name \"CentOS ${OS_VERSION}\" --product \"Katello Client 7\" --repository \"Katello Client 7\""
+    do_function_task "hammer content-view add-repository --organization-id \"${ORG_ID}\" --name \"CentOS ${OS_VERSION}\" --product \"Katello Client 7\" --repository \"Katello Client 7\""
 
     ## Publish and promote content view
-    do_function_task "hammer content-view publish --organization-id 1 --name \"CentOS ${OS_VERSION}\" --description \"Initial publishing\""
+    do_function_task "hammer content-view publish --organization-id \"${ORG_ID}\" --name \"CentOS ${OS_VERSION}\" --description \"Initial publishing\""
     while read -r lcm;
     do
-        do_function_task "hammer content-view version promote --organization-id 1 --content-view \"CentOS ${OS_VERSION}\" --version \"1.0\" --to-lifecycle-environment \"${lcm}\""
+        do_function_task "hammer content-view version promote --organization-id \"${ORG_ID}\" --content-view \"CentOS ${OS_VERSION}\" --version \"1.0\" --to-lifecycle-environment \"${lcm}\""
     done < <(hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library")
 
     ## Create Katello activation keys
     while read -r lcm;
     do
-        do_function_task "hammer activation-key create --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --unlimited-hosts"
+        do_function_task "hammer activation-key create --organization-id \"${ORG_ID}\" --name \"CentOS_${OS_NICE}_${lcm}_Key\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --unlimited-hosts"
     done < <(hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library")
 
     ## Assign activation keys to Katello subscription (current view)
@@ -132,8 +138,8 @@ do_populate_katello() {
     sub_katello_id=$(hammer --no-headers subscription list --fields Id --search "Katello Client 7" | awk '{$1=$1};1')
     while read -r lcm;
     do
-        do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_centos_id}\""
-        do_function_task "hammer activation-key add-subscription --organization-id 1 --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_katello_id}\""
+        do_function_task "hammer activation-key add-subscription --organization-id \"${ORG_ID}\" --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_centos_id}\""
+        do_function_task "hammer activation-key add-subscription --organization-id \"${ORG_ID}\" --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_katello_id}\""
     done < <(hammer --no-headers lifecycle-environment list --order "id asc" --fields Name | grep -v "Library")
 
     ## Check Operating System
@@ -152,14 +158,14 @@ do_populate_katello() {
     ## Create Katello hostgroup
     while read -r location;
     do
-        domain_id=$(hammer --no-headers domain list --organization-id 1 --location "$location" --fields Id | awk '{$1=$1};1')
+        domain_id=$(hammer --no-headers domain list --organization-id "${ORG_ID}" --location "$location" --fields Id | awk '{$1=$1};1')
         while read -r lcm;
         do
             lcm_lower=$(echo "$lcm" | tr "[:upper:]" "[:lower:]")
             location_lower=$(echo "$location" | tr "[:upper:]" "[:lower:]")
             hostgroup_name="hg_${lcm_lower}_${location_lower}_${OS_NICE}"
 
-            do_function_task "hammer hostgroup create --organization-id 1 --location \"${location}\" --name \"${hostgroup_name}\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --content-source \"katello.tanix.nl\" --compute-resource \"${VMWARE}\" --compute-profile \"1-Small\" --domain-id \"${domain_id}\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS-${tmpOS:0:1}\" --partition-table \"Kickstart default\""
+            do_function_task "hammer hostgroup create --organization-id \"${ORG_ID}\" --location \"${location}\" --name \"${hostgroup_name}\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --content-source \"katello.tanix.nl\" --compute-resource \"${VMWARE}\" --compute-profile \"1-Small\" --domain-id \"${domain_id}\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS-${tmpOS:0:1}\" --partition-table \"Kickstart default\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"centos-version\" --parameter-type string --value \"${tmpVersion}\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"yum-config-manager-disable-repo\" --parameter-type boolean --value \"true\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"enable-epel\" --parameter-type boolean --value \"false\""
