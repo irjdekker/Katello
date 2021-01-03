@@ -112,6 +112,8 @@ do_install_katello() {
     PASSWORD="$1"
     do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username admin --foreman-initial-admin-password \"${PASSWORD}\""
     do_function_task "foreman-maintain service status"
+    export ORG_ID=1
+    export LOC_ID=2
 }
 
 do_create_organization() {
@@ -494,7 +496,7 @@ do_task "Install JQ" "yum install jq -y"
 do_task "Update system" "yum update -y"
 
 ## Create organization
-do_function "Create organization" "do_create_organization"
+# do_function "Create organization" "do_create_organization"
 
 ## Create Katello compute resource (vCenter)
 do_function "Create Katello compute resource (vCenter)" "do_compute_resource"
