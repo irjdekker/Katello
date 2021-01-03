@@ -112,8 +112,8 @@ do_install_katello() {
     PASSWORD="$1"
     do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username admin --foreman-initial-admin-password \"${PASSWORD}\""
     do_function_task "foreman-maintain service status"
-    export ORG_ID=1
-    export LOC_ID=2
+    # export ORG_ID=1
+    # export LOC_ID=2
 }
 
 do_create_organization() {
@@ -156,7 +156,7 @@ do_create_subnet() {
     do_function_task "hammer subnet create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --domain-ids \"${domain_id}\" --name \"tanix-5\" --network-type \"IPv4\" --network \"10.10.5.0\" --prefix 24 --gateway \"10.10.5.1\" --dns-primary \"10.10.5.1\" --boot-mode \"Static\""
 }
 
-do_centos7_credential() {
+do_setup_credentials() {
     do_function_task "mkdir -p /etc/pki/rpm-gpg/import"
     do_function_task "cd /etc/pki/rpm-gpg/import/"
     do_function_task "wget -P /etc/pki/rpm-gpg/import/ http://mirror.1000mbps.com/centos/RPM-GPG-KEY-CentOS-7"
@@ -407,7 +407,7 @@ do_function_task_if() {
 }
 
 do_function() {
-    MESSAGE="$1"
+    MESSAGE="$1 $(date +%H:%M)"
 
     print_task "${MESSAGE}" -1 false
     eval "$2"
@@ -496,7 +496,7 @@ do_task "Install JQ" "yum install jq -y"
 do_task "Update system" "yum update -y"
 
 ## Create organization
-# do_function "Create organization" "do_create_organization"
+do_function "Create organization" "do_create_organization"
 
 ## Create Katello compute resource (vCenter)
 do_function "Create Katello compute resource (vCenter)" "do_compute_resource"
@@ -510,11 +510,11 @@ do_function "Create Katello subnet" "do_create_subnet"
 ## Create Katello LCM environments
 do_function "Create Katello LCM environments" "do_lcm_setup"
 
-## Create Katello credential
-do_function "Create Katello CentOS 7 credential" "do_centos7_credential"
+## Create Katello credentials
+do_function "Create Katello credentials" "do_setup_credentials"
 
-## Create Katello setup for Katello Client 7
-do_function "Create Katello setup for Katello Client 7" "do_populate_katello_client"
+## Create Katello setup for Katello Client
+do_function "Create Katello setup for Katello Client" "do_populate_katello_client"
 
 ## Create Katello setup for CentOS 7.x
 do_task "Create Katello setup for CentOS 7.x" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s 7.x"
