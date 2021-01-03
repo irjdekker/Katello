@@ -116,7 +116,7 @@ do_populate_katello() {
     done
 
     ## Add Katello repositories to content view
-    do_function_task "hammer content-view add-repository --organization-id \"${ORG_ID}\" --name \"CentOS ${OS_VERSION}\" --product \"Katello Client 7\" --repository \"Katello Client 7\""
+    do_function_task "hammer content-view add-repository --organization-id \"${ORG_ID}\" --name \"CentOS ${OS_VERSION}\" --product \"Katello Client\" --repository \"Katello Client\""
 
     ## Publish and promote content view
     do_function_task "hammer content-view publish --organization-id \"${ORG_ID}\" --name \"CentOS ${OS_VERSION}\" --description \"Initial publishing\""
@@ -135,7 +135,7 @@ do_populate_katello() {
     local sub_centos_id
     sub_centos_id=$(hammer --no-headers subscription list --fields Id --search "CentOS ${OS_VERSION} Linux x86_64" | awk '{$1=$1};1')
     local sub_katello_id
-    sub_katello_id=$(hammer --no-headers subscription list --fields Id --search "Katello Client 7" | awk '{$1=$1};1')
+    sub_katello_id=$(hammer --no-headers subscription list --fields Id --search "Katello Client" | awk '{$1=$1};1')
     while read -r lcm;
     do
         do_function_task "hammer activation-key add-subscription --organization-id \"${ORG_ID}\" --name \"CentOS_${OS_NICE}_${lcm}_Key\" --quantity \"1\" --subscription-id \"${sub_centos_id}\""
