@@ -407,7 +407,7 @@ do_function_task_if() {
 }
 
 do_function() {
-    MESSAGE="$1 $(date +%H:%M)"
+    MESSAGE="$1 ($(date +%H:%M))"
 
     print_task "${MESSAGE}" -1 false
     eval "$2"
