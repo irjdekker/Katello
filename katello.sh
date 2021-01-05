@@ -357,7 +357,7 @@ run_cmd() {
 }
 
 do_task() {
-    print_task "$1" -1 false
+    print_task "$1 ($(date +%H:%M))" -1 false
     if run_cmd "$2"; then
         print_task "$1" 0 true
     else
@@ -497,6 +497,7 @@ do_task "Update system" "yum update -y"
 
 ## Create organization
 do_function "Create organization" "do_create_organization"
+exit 1
 
 ## Create Katello compute resource (vCenter)
 do_function "Create Katello compute resource (vCenter)" "do_compute_resource"
