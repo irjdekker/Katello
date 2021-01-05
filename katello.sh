@@ -130,8 +130,8 @@ do_create_organization() {
     local USER_ID
     USER_ID=$(hammer --no-headers user list --fields Id --search tanix-admin | awk '{$1=$1};1')
     do_function_task "hammer user add-role --id \"${USER_ID}\" --role \"Tanix admin\""
-    do_function_task "sed -i \"s/^\(\s*:username:\s*\).*$/\1'tanix-admin'/\" /root/.hammer/cli.modules.d/foreman.yml"
-    do_function_task "sed -i \"s/^\(\s*:password:\s*\).*$/\1'j7ktSn3zgItAFz'/\" /root/.hammer/cli.modules.d/foreman.yml"
+    # do_function_task "sed -i \"s/^\(\s*:username:\s*\).*$/\1'tanix-admin'/\" /root/.hammer/cli.modules.d/foreman.yml"
+    # do_function_task "sed -i \"s/^\(\s*:password:\s*\).*$/\1'j7ktSn3zgItAFz'/\" /root/.hammer/cli.modules.d/foreman.yml"
 }
 
 do_compute_resource() {
@@ -497,7 +497,6 @@ do_task "Update system" "yum update -y"
 
 ## Create organization
 do_function "Create organization" "do_create_organization"
-exit 1
 
 ## Create Katello compute resource (vCenter)
 do_function "Create Katello compute resource (vCenter)" "do_compute_resource"
