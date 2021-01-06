@@ -517,10 +517,10 @@ do_function "Create Katello credentials" "do_setup_credentials"
 do_function "Create Katello setup for Katello Client" "do_populate_katello_client"
 
 ## Create Katello setup for CentOS 7.x
-do_task "Create Katello setup for CentOS 7.x" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s 7.x"
+do_task "Create Katello setup for CentOS 7.x" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s \"${ORG_ID}\" \"7.x\""
 
 ## Create Katello setup for CentOS 8.x
-do_task "Create Katello setup for CentOS 8.x" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s 8.x"
+do_task "Create Katello setup for CentOS 8.x" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s \"${ORG_ID}\" \"8.x\""
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"

@@ -6,8 +6,8 @@
 ## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh -o repo.sh 2>/dev/null && bash repo.sh && rm -f repo.sh
 ## wget -O repo.sh https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null && bash repo.sh && rm -f repo.sh
 ## b) with specifying the version
-## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s <version>
-## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s <version>
+## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s <org_id> <version>
+## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s <org_id> <version>
 
 ## *************************************************************************************************** ##
 ##      __      __     _____  _____          ____  _      ______  _____                                ##
@@ -52,18 +52,14 @@ VMWARE="vmware_home"
 ## *************************************************************************************************** ##
 
 do_populate_katello() {
+    local ORG_ID
+    ORG_ID="$1"
     local OS_VERSION
-    OS_VERSION="$1"
+    OS_VERSION="$2"
     local OS_NICE
     OS_NICE=${OS_VERSION//[^[:alnum:]-]/_}
     local SYNC_TIME
     SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
-    local USER_NAME
-    USER_NAME=$(grep "username" /root/.hammer/cli.modules.d/foreman.yml | sed "s/^[^']*'\([^']*\)'.*/\1/")
-    local ORG_NAME
-    ORG_NAME=$(hammer user info --login "${USER_NAME}" | grep "Default organization" | cut -d ':' -f 2 | awk '{$1=$1};1')
-    ORG_ID=$(hammer --no-headers organization list --search "${ORG_NAME}" --fields Id | awk '{$1=$1};1')
-    export ORG_ID
 
     ## Create Katello product
     do_function_task "hammer product create --organization-id \"${ORG_ID}\" --name \"CentOS ${OS_VERSION} Linux x86_64\""
@@ -303,7 +299,20 @@ do_function() {
 echo 'Welcome to Katello installer'
 
 ## Check if version is specified
-if [[ $# -eq 0 ]]; then
+if [[ $# -eq 2 ]]; then
+    ORG_ID="$1"
+    VERSION="$2"
+else
+    echo -n "Organization ID: "
+    read -rs ORG_ID
+    echo
+
+    ## Check if organization id is specified
+    if [[ -z "${ORG_ID}" ]]; then
+        echo "No organization ID supplied"
+        exit 1
+    fi
+
     echo -n "Version: "
     read -rs VERSION
     echo
@@ -313,8 +322,6 @@ if [[ $# -eq 0 ]]; then
         echo "No version supplied"
         exit 1
     fi
-else
-    VERSION="$1"
 fi
 
 ## Check if script run by user root
@@ -327,7 +334,7 @@ fi
 tput civis
 
 ## Create Katello setup for CentOS specific version
-do_function "Create Katello setup for CentOS ${VERSION}" "do_populate_katello \"${VERSION}\""
+do_function "Create Katello setup for CentOS ${VERSION}" "do_populate_katello \"${ORG_ID}\" \"${VERSION}\""
 
 # Restore cursor
 tput cvvis
