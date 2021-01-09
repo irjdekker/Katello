@@ -61,11 +61,8 @@ ENCSOURCEFILE="$SOURCEFILE.enc"
 
 do_download_configfile() {
     do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/source.sh.enc -o \"${ENCSOURCEFILE}\""
-    echo "/usr/bin/openssl enc -aes-256-cbc -d -in \"${ENCSOURCEFILE}\" -out \"{$SOURCEFILE}\" -pass pass:\"${PASSWORD}\""
-    do_function_task "/usr/bin/openssl enc -aes-256-cbc -d -in \"${ENCSOURCEFILE}\" -out \"{$SOURCEFILE}\" -pass pass:\"${PASSWORD}\""
-    echo "3"
+    do_function_task "/usr/bin/openssl enc -aes-256-cbc -d -in \"${ENCSOURCEFILE}\" -out \"${SOURCEFILE}\" -pass pass:\"${PASSWORD}\""
     do_function_task "[ -f \"${ENCSOURCEFILE}\" ] && rm -f \"${ENCSOURCEFILE}\" || sleep 0.1"
-    echo "4"
     do_function_task "chmod 700 \"${SOURCEFILE}\""
 }
 
