@@ -123,7 +123,7 @@ do_create_organization() {
     do_function_task "hammer location create --name Home"
     LOC_ID=$(hammer --no-headers location list --search Home --fields Id | awk '{$1=$1};1')
     export LOC_ID
-    do_function_task "hammer domain update -id 1 --organization-id \"${ORG_ID}\" --location-id \"{ORG_ID}\""
+    do_function_task "hammer domain update --id 1 --organization-id \"${ORG_ID}\" --location-id \"{ORG_ID}\""
     do_function_task "hammer proxy update --id 1 --organization-id \"${ORG_ID}\" --location-id \"{ORG_ID}\""
     do_function_task "hammer location add-organization --name Home --organization Tanix"
     do_function_task "hammer role clone --name \"Organization admin\" --new-name \"Tanix admin\""
