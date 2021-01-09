@@ -483,7 +483,6 @@ else
     echo "Variable file not available"
     exit 1
 fi
-exit 0
 
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
