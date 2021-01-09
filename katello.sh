@@ -26,6 +26,9 @@ IRed='\e[0;31m'
 IGreen='\e[0;32m'
 IYellow='\e[0;33m'
 Reset='\e[0m'
+CREATE_ORG=false
+SOURCEFILE="$HOME/source.sh"
+ENCSOURCEFILE="$SOURCEFILE.enc"
 VCENTER="vcenter.tanix.nl"
 VMWARE="vmware_home"
 VMWARE_USER="administrator@tanix.local"
@@ -41,6 +44,16 @@ VMWARE_CL="cluster"
 ##      |_|  \_\\____/ \____/   |_|  |_____|_| \_|______|_____/                                        ##
 ##                                                                                                     ##
 ## *************************************************************************************************** ##
+
+do_download_configfile() {
+    #local PASSWORD
+    #PASSWORD="$1"
+    echo "${PASSWORD}"
+    do_function_task "wget -O \"${ENCSOURCEFILE}\" https://raw.githubusercontent.com/irjdekker/Katello/master/source.sh.enc"
+    do_function_task "/usr/bin/openssl enc -aes-256-cbc -d -in \"${ENCSOURCEFILE}\" -out \"{$SOURCEFILE}\" -pass pass:\"${PASSWORD}\""
+    do_function_task "[ -f \"${ENCSOURCEFILE}\" ] && rm -f \"${ENCSOURCEFILE}\" || sleep 0.1"
+    do_function_task "chmod 700 \"${SOURCEFILE}\""
+}
 
 do_setup_locale() {
     do_function_task "localectl set-locale LC_CTYPE=en_US.utf8"
@@ -117,23 +130,28 @@ do_install_katello() {
 }
 
 do_create_organization() {
-    do_function_task "hammer organization create --name Tanix --label Tanix --description Tanix"
-    ORG_ID=$(hammer --no-headers organization list --search Tanix --fields Id | awk '{$1=$1};1')
-    export ORG_ID
-    do_function_task "hammer location create --name Home"
-    LOC_ID=$(hammer --no-headers location list --search Home --fields Id | awk '{$1=$1};1')
-    export LOC_ID
-    do_function_task "hammer domain update --id 1 --organization-id \"${ORG_ID}\" --location-id \"{ORG_ID}\""
-    do_function_task "hammer proxy update --id 1 --organization-id \"${ORG_ID}\" --location-id \"{ORG_ID}\""
-    do_function_task "hammer location add-organization --name Home --organization Tanix"
-    do_function_task "hammer role clone --name \"Organization admin\" --new-name \"Tanix admin\""
-    do_function_task "hammer role update --name \"Tanix admin\" --organization-ids \"${ORG_ID}\" --location-ids \"${LOC_ID}\""
-    do_function_task "hammer user create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --default-organization-id \"${ORG_ID}\" --default-location-id \"${LOC_ID}\" --login tanix-admin --password j7ktSn3zgItAFz --mail tanix.admin@tanix.nl --auth-source-id 1"
-    local USER_ID
-    USER_ID=$(hammer --no-headers user list --fields Id --search tanix-admin | awk '{$1=$1};1')
-    do_function_task "hammer user add-role --id \"${USER_ID}\" --role \"Tanix admin\""
-    # do_function_task "sed -i \"s/^\(\s*:username:\s*\).*$/\1'tanix-admin'/\" /root/.hammer/cli.modules.d/foreman.yml"
-    # do_function_task "sed -i \"s/^\(\s*:password:\s*\).*$/\1'j7ktSn3zgItAFz'/\" /root/.hammer/cli.modules.d/foreman.yml"
+    if [ "${CREATE_ORG}" = true ] ; then
+        do_function_task "hammer organization create --name Tanix --label Tanix --description Tanix"
+        ORG_ID=$(hammer --no-headers organization list --search Tanix --fields Id | awk '{$1=$1};1')
+        export ORG_ID
+        do_function_task "hammer location create --name Home"
+        LOC_ID=$(hammer --no-headers location list --search Home --fields Id | awk '{$1=$1};1')
+        export LOC_ID
+        do_function_task "hammer domain update --id 1 --organization-id \"${ORG_ID}\" --location-id \"{LOC_ID}\""
+        do_function_task "hammer proxy update --id 1 --organization-id \"${ORG_ID}\" --location-id \"{LOC_ID}\""
+        do_function_task "hammer location add-organization --name Home --organization Tanix"
+        do_function_task "hammer role clone --name \"Organization admin\" --new-name \"Tanix admin\""
+        do_function_task "hammer role update --name \"Tanix admin\" --organization-ids \"${ORG_ID}\" --location-ids \"${LOC_ID}\""
+        do_function_task "hammer user create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --default-organization-id \"${ORG_ID}\" --default-location-id \"${LOC_ID}\" --login tanix-admin --password j7ktSn3zgItAFz --mail tanix.admin@tanix.nl --auth-source-id 1"
+        local USER_ID
+        USER_ID=$(hammer --no-headers user list --fields Id --search tanix-admin | awk '{$1=$1};1')
+        do_function_task "hammer user add-role --id \"${USER_ID}\" --role \"Tanix admin\""
+        # do_function_task "sed -i \"s/^\(\s*:username:\s*\).*$/\1'tanix-admin'/\" /root/.hammer/cli.modules.d/foreman.yml"
+        # do_function_task "sed -i \"s/^\(\s*:password:\s*\).*$/\1'j7ktSn3zgItAFz'/\" /root/.hammer/cli.modules.d/foreman.yml"
+    else
+        export ORG_ID=1
+        export LOC_ID=2
+    fi
 }
 
 do_compute_resource() {
@@ -452,6 +470,18 @@ fi
 # Hide cursor
 tput civis
 
+# Import variables
+do_function "Import variables" "do_download_configfile"
+
+# source all script parameters
+if [ -f "$SOURCEFILE" ]; then
+    source "$SOURCEFILE"
+else
+    echo "Variable file not available"
+    exit 1
+fi
+exit 0
+
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -519,10 +549,10 @@ do_function "Create Katello credentials" "do_setup_credentials"
 do_function "Create Katello setup for Katello Client" "do_populate_katello_client"
 
 ## Create Katello setup for CentOS 7.x
-do_task "Create Katello setup for CentOS 7.x" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s \"${ORG_ID}\" \"7.x\""
+# do_task "Create Katello setup for CentOS 7.x" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s \"${ORG_ID}\" \"7.x\""
 
 ## Create Katello setup for CentOS 8.x
-# do_task "Create Katello setup for CentOS 8.x" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s \"${ORG_ID}\" \"8.x\""
+do_task "Create Katello setup for CentOS 8.x" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/repo.sh 2>/dev/null | bash -s \"${ORG_ID}\" \"8.x\""
 
 ## Setup bootdisks to Katello
 do_function "Setup bootdisks to Katello" "do_setup_bootdisks"
