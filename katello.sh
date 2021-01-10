@@ -132,8 +132,13 @@ do_config_katello() {
 }
 
 do_install_katello() {
-    do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username \"${ADMIN_USER}\" --foreman-initial-admin-password \"${ADMIN_PASSWORD}\""
-    do_function_task "foreman-maintain service status"
+    if [ "${CREATE_ORG}" = true ] ; then
+        do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username \"${ADMIN_USER}\" --foreman-initial-admin-password \"${ADMIN_PASSWORD}\""
+        do_function_task "foreman-maintain service status"
+    else    
+        do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username \"${ADMIN_USER}\" --foreman-initial-admin-password \"${ADMIN_PASSWORD}\" --foreman-initial-organization \"${ORG_NAME}\" --foreman-initial-location \"${ORG_LOCATION}\""
+        do_function_task "foreman-maintain service status"
+    fi    
 }
 
 do_create_organization() {
