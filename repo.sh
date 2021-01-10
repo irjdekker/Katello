@@ -60,7 +60,9 @@ do_populate_katello() {
     OS_NICE=${OS_VERSION//[^[:alnum:]-]/_}
     local SYNC_TIME
     SYNC_TIME=$(date --date "1970-01-01 02:00:00 $(shuf -n1 -i0-10800) sec" '+%T')
-
+    local SSH_KEY
+    SSH_KEY=$(cat ~foreman-proxy/.ssh/id_rsa_foreman_proxy.pub)
+    
     ## Create Katello product
     do_function_task "hammer product create --organization-id \"${ORG_ID}\" --name \"CentOS ${OS_VERSION} Linux x86_64\""
 
@@ -164,6 +166,8 @@ do_populate_katello() {
             do_function_task "hammer hostgroup create --organization-id \"${ORG_ID}\" --location \"${location}\" --name \"${hostgroup_name}\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --content-source \"katello.tanix.nl\" --compute-resource \"${VMWARE}\" --compute-profile \"1-Small\" --domain-id \"${domain_id}\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS-${tmpOS:0:1}\" --partition-table \"Kickstart default\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"centos-version\" --parameter-type string --value \"${tmpVersion}\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"yum-config-manager-disable-repo\" --parameter-type boolean --value \"true\""
+            do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"host_registration_remote_execution\" --parameter-type boolean --value \"true\""
+            do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"remote_execution_ssh_keys\" --parameter-type string --value \"${SSH_KEY}\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"enable-epel\" --parameter-type boolean --value \"false\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"kt_activation_keys\" --value \"CentOS_${OS_NICE}_${lcm}_Key\""
         done < <(hammer --no-headers lifecycle-environment list --fields Name | grep -v "Library")
