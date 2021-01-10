@@ -135,10 +135,10 @@ do_install_katello() {
     if [ "${CREATE_ORG}" = true ] ; then
         do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username \"${ADMIN_USER}\" --foreman-initial-admin-password \"${ADMIN_PASSWORD}\""
         do_function_task "foreman-maintain service status"
-    else    
+    else
         do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username \"${ADMIN_USER}\" --foreman-initial-admin-password \"${ADMIN_PASSWORD}\" --foreman-initial-organization \"${ORG_NAME}\" --foreman-initial-location \"${ORG_LOCATION}\""
         do_function_task "foreman-maintain service status"
-    fi    
+    fi
 }
 
 do_create_organization() {
@@ -308,7 +308,7 @@ do_create_host() {
         compute_profile=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
     fi
 
-    do_function_task "hammer host create --name \"${NAME}\" --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --hostgroup-id \"${hostgroup_id}\" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"ADMIN_USER\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${DEFAULT_ROOT_PASSWORD=}\" --ip \"${IP}\" --compute-attributes \"start=1\""
+    do_function_task "hammer host create --name \"${NAME}\" --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --hostgroup-id \"${hostgroup_id}\" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"${ADMIN_USER}\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${DEFAULT_ROOT_PASSWORD=}\" --ip \"${IP}\" --compute-attributes \"start=1\""
 
     for((i=1;i<=15;++i)); do
         sleep 60
