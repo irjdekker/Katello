@@ -580,7 +580,7 @@ do_function "Fix CentOS >= 8.3 issue with iPXE" "do_fix_ipxe"
 do_function "Create inventory account" "do_inventory_account"
 
 # Create test host
-do_function "Create test host" "do_create_host \"awk\" \"hg_production_home_8_x\" \"10.10.5.37\" \"3-Large\""
+do_function "Create test host" "do_create_host \"awx\" \"hg_production_home_8_x\" \"10.10.5.37\" \"3-Large\""
 
 # Restore cursor
 tput cvvis
