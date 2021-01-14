@@ -347,7 +347,7 @@ fi
 
 # Hide cursor
 tput civis
-
+echo "$PASSWORD"
 do_task "Test123" "sleep 60"
 exit 0
 
