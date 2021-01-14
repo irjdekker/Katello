@@ -588,7 +588,7 @@ export LOC_ID=2
 # do_function "Create test host" "do_create_host \"awx\" \"hg_production_home_8_x\" \"10.10.5.37\" \"3-Large\""
 
 # Run script on remote host
-ssh -tt -q -i ~foreman-proxy/.ssh/id_rsa_foreman_proxy root@10.10.5.37 "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.sh 2>/dev/null | bash -s $PASSWORD" 2>/dev/null
+ssh -tt -q -i ~foreman-proxy/.ssh/id_rsa_foreman_proxy root@10.10.5.37 "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.sh 2>/dev/null | bash -s $PASSWORD"
 
 # Restore cursor
 tput cvvis
