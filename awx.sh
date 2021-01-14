@@ -324,8 +324,6 @@ do_function() {
 ##                                                                                                     ##
 ## *************************************************************************************************** ##
 
-echo 'Welcome to AWX installer'
-
 ## Check if password is specified
 if [[ $# -eq 0 ]]; then
     echo -n "Password: "
