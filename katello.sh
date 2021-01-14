@@ -581,6 +581,9 @@ do_function "Fix CentOS >= 8.3 issue with iPXE" "do_fix_ipxe"
 do_function "Create inventory account" "do_inventory_account"
 fi
 
+export ORG_ID=1
+export LOC_ID=2
+
 # Create test host
 do_function "Create test host" "do_create_host \"awx\" \"hg_production_home_8_x\" \"10.10.5.37\" \"3-Large\""
 
