@@ -1,5 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2181
+# shellcheck disable=SC1090
 
 ## The easiest way to get the script on your machine is:
 ## a) without specifying the password
@@ -18,6 +19,24 @@
 ##          \/_/    \_\_|  \_\_____/_/    \_\____/|______|______|_____/                                ##
 ##                                                                                                     ##
 ## *************************************************************************************************** ##
+## Following variables are defined in sourced shell script
+##      ADMIN_USER
+##      ADMIN_PASSWORD
+##      ORG_NAME
+##      ORG_LOCATION
+##      ORG_USER
+##      ORG_PASSWORD
+##      ORG_MAIL
+##      INV_USER
+##      INV_PASSWORD
+##      INV_MAIL
+##      VMWARE_NAME
+##      VCENTER
+##      VCENTER_USER
+##      VCENTER_PASSWORD
+##      VMWARE_DC
+##      VMWARE_CL
+##      VMWARE_NETWORK
 ##
 ## The following variables are defined below
 
@@ -26,6 +45,8 @@ IRed='\e[0;31m'
 IGreen='\e[0;32m'
 IYellow='\e[0;33m'
 Reset='\e[0m'
+SOURCEFILE="$HOME/source.sh"
+ENCSOURCEFILE="$SOURCEFILE.enc"
 
 ## *************************************************************************************************** ##
 ##       _____   ____  _    _ _______ _____ _   _ ______  _____                                        ##
@@ -36,6 +57,13 @@ Reset='\e[0m'
 ##      |_|  \_\\____/ \____/   |_|  |_____|_| \_|______|_____/                                        ##
 ##                                                                                                     ##
 ## *************************************************************************************************** ##
+
+do_download_configfile() {
+    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/source.sh.enc -o \"${ENCSOURCEFILE}\""
+    do_function_task "/usr/bin/openssl enc -aes-256-cbc -d -in \"${ENCSOURCEFILE}\" -out \"${SOURCEFILE}\" -pass pass:\"${PASSWORD}\""
+    do_function_task "[ -f \"${ENCSOURCEFILE}\" ] && rm -f \"${ENCSOURCEFILE}\" || sleep 0.1"
+    do_function_task "chmod 700 \"${SOURCEFILE}\""
+}
 
 do_setup_locale() {
     do_function_task "localectl set-locale LC_CTYPE=en_US.utf8"
@@ -96,12 +124,10 @@ do_clone_awx() {
 }
 
 do_update_inventory() {
-    local PASSWORD
-    PASSWORD="$1"
     local SECRET_KEY
     SECRET_KEY=$(openssl rand -base64 30 | sed 's/[\\&*./+!]/\\&/g')
 
-    do_function_task "sed -i \"s/^\s*admin_password=password\s*$/admin_password=${PASSWORD}/g\" /root/awx/installer/inventory"
+    do_function_task "sed -i \"s/^\s*admin_password=password\s*$/admin_password=${ADMIN_PASSWORD}/g\" /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*create_preload_data.*$/create_preload_data=false/g' /root/awx/installer/inventory"
     do_function_task "sed -i \"s/^\s*secret_key=awxsecret\s*$/secret_key=${SECRET_KEY}/g\" /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*awx_official.*$/awx_official=true/g' /root/awx/installer/inventory"
@@ -115,20 +141,17 @@ do_install_playbook() {
 }
 
 do_configure_awx() {
-    local PASSWORD
-    PASSWORD="$1"
-
     export TOWER_HOST=http://localhost
     local EXPORT
-    EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$PASSWORD" awx login -f human)
+    EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
     eval "${EXPORT}"
     awx config
 
-    do_function_task "awx organizations create --name Tanix --description Tanix --max_hosts 100"
+    do_function_task "awx organizations create --name '${ORG_NAME}' --description '${ORG_NAME}' --max_hosts 100"
 
     local ORGANIZATION_ID
-    if [ "$(awx organizations list --name Tanix -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
-        ORGANIZATION_ID=$(awx organizations list --name Tanix -f human --filter id | tail -n +3)
+    if [ "$(awx organizations list --name \""${ORG_NAME}"\" -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+        ORGANIZATION_ID=$(awx organizations list --name "${ORG_NAME}" -f human --filter id | tail -n +3)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -165,7 +188,7 @@ do_configure_awx() {
         exit 1
     fi
 
-    do_function_task "awx credentials create --name katello_inventory --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{host: 'https://katello.tanix.nl', username: 'sync_inventory', password: 'Hwbod6ZS27IAMj'}\""
+    do_function_task "awx credentials create --name katello_inventory --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{host: 'https://katello.tanix.nl', username: '${INV_USER}', password: '${INV_PASSWORD}'}\""
 
     local CRED_ID
     if [ "$(awx credentials get Katello -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
@@ -324,6 +347,8 @@ do_function() {
 ##                                                                                                     ##
 ## *************************************************************************************************** ##
 
+echo 'Welcome to AWX installer'
+
 ## Check if password is specified
 if [[ $# -eq 0 ]]; then
     echo -n "Password: "
@@ -347,9 +372,17 @@ fi
 
 # Hide cursor
 tput civis
-echo "$PASSWORD"
-do_task "Test123" "sleep 60"
-exit 0
+
+# Import variables
+do_function "Import variables" "do_download_configfile"
+
+# source all script parameters
+if [ -f "$SOURCEFILE" ]; then
+    source "$SOURCEFILE"
+else
+    echo "Variable file not available"
+    exit 1
+fi
 
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
@@ -394,7 +427,7 @@ do_function "Clone AWX Git repository" "do_clone_awx"
 do_task "Create required folders" "mkdir -p /var/lib/awx/projects && mkdir -p /var/lib/pgdocker"
 
 ## Update inventory file
-do_function "Update inventory file" "do_update_inventory \"${PASSWORD}\""
+do_function "Update inventory file" "do_update_inventory"
 
 ## Install AWX
 do_function "Install AWX" "do_install_playbook"
@@ -403,7 +436,7 @@ do_function "Install AWX" "do_install_playbook"
 do_task "Install AWX CLI" "pip3 install awxkit"
 
 ## Configure AWX
-do_function "Configure AWX" "do_configure_awx \"${PASSWORD}\""
+do_function "Configure AWX" "do_configure_awx"
 
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"

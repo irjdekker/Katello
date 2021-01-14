@@ -489,6 +489,7 @@ else
     exit 1
 fi
 
+if false; then
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
@@ -578,9 +579,13 @@ do_function "Fix CentOS >= 8.3 issue with iPXE" "do_fix_ipxe"
 
 # Create inventory account
 do_function "Create inventory account" "do_inventory_account"
+fi
 
 # Create test host
 do_function "Create test host" "do_create_host \"awx\" \"hg_production_home_8_x\" \"10.10.5.37\" \"3-Large\""
+
+# Run script on remote host
+ssh -tt -q -i ~foreman-proxy/.ssh/id_rsa_foreman_proxy root@10.10.5.37 "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.sh 2>/dev/null | bash -s $PASSWORD" 2>/dev/null
 
 # Restore cursor
 tput cvvis
