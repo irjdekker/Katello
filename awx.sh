@@ -272,6 +272,7 @@ print_task() {
 }
 
 run_cmd() {
+    echo "$@" >> "${LOGFILE}"
     if eval "$@" >> "${LOGFILE}" 2>&1; then
         return 0
     else
