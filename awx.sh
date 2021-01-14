@@ -350,6 +350,9 @@ fi
 # Hide cursor
 tput civis
 
+do_task "Test123" "sleep 60"
+exit 0
+
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
 
