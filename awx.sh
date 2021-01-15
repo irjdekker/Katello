@@ -144,8 +144,8 @@ do_configure_awx() {
     export TOWER_HOST=http://localhost
     local EXPORT
     EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
-    eval "${EXPORT}"
-    awx config
+    do_function_task "${EXPORT}"
+    do_function_task "awx config"
 
     do_function_task "awx organizations create --name '${ORG_NAME}' --description '${ORG_NAME}' --max_hosts 100"
 
