@@ -165,8 +165,10 @@ do_configure_awx() {
     do_function_task "awx config"
     do_function_task "awx organizations create --name '${ORG_NAME}' --description '${ORG_NAME}' --max_hosts 100"
 
+    local ORG_COUNT
     local ORGANIZATION_ID
-    if [ "$(awx organizations list --name \""${ORG_NAME}"\" -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+    ORG_COUNT=$(awx organizations list --name "${ORG_NAME}" -f human --filter id | tail -n +3 | wc -l)
+    if [ "${ORG_COUNT}" == "1" ]; then
         ORGANIZATION_ID=$(awx organizations list --name "${ORG_NAME}" -f human --filter id | tail -n +3)
     else
         print_task "${MESSAGE}" 1 true
@@ -175,8 +177,10 @@ do_configure_awx() {
 
     do_function_task "awx teams create --name Dekker --description Dekker --organization ${ORGANIZATION_ID}"
 
+    local TEAM_COUNT
     local TEAM_ID
-    if [ "$(awx teams list --name Dekker -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+    TEAM_COUNT=$(awx teams list --name Dekker -f human --filter id | tail -n +3 | wc -l)
+    if [ "${TEAM_COUNT}" == "1" ]; then
         TEAM_ID=$(awx teams list --name Dekker -f human --filter id | tail -n +3)
     else
         print_task "${MESSAGE}" 1 true
@@ -185,8 +189,10 @@ do_configure_awx() {
 
     do_function_task "awx users create --username irjdekker --email ir.j.dekker@gmail.com --first_name Jeroen --last_name Dekker --password ${PASSWORD}"
 
+    local USER_COUNT
     local USER_ID
-    if [ "$(awx users list --username irjdekker -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+    USER_COUNT=$(awx users list --username irjdekker -f human --filter id | tail -n +3 | wc -l)
+    if [ "${USER_COUNT}" == "1" ]; then
         USER_ID=$(awx users list --username irjdekker -f human --filter id | tail -n +3)
     else
         print_task "${MESSAGE}" 1 true
@@ -196,8 +202,10 @@ do_configure_awx() {
     do_function_task "awx users grant --organization ${ORGANIZATION_ID} --role admin ${USER_ID}"
     do_function_task "awx users grant --team ${TEAM_ID} --role member ${USER_ID}"
 
+    local CRED_TYPE_COUNT
     local CRED_TYPE_ID
-    if [ "$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+    CRED_TYPE_COUNT=$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3 | wc -l)
+    if [ "${CRED_TYPE_COUNT}" == "1" ]; then
         CRED_TYPE_ID=$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3)
     else
         print_task "${MESSAGE}" 1 true
@@ -206,8 +214,10 @@ do_configure_awx() {
 
     do_function_task "awx credentials create --name katello_inventory --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{host: 'https://katello.tanix.nl', username: '${INV_USER}', password: '${INV_PASSWORD}'}\""
 
+    local CRED_COUNT
     local CRED_ID
-    if [ "$(awx credentials get Katello -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+    CRED_COUNT=$(awx credentials get Katello -f human --filter id | tail -n +3 | wc -l)
+    if [ "${CRED_COUNT}" == "1" ]; then
         CRED_ID=$(awx credentials get Katello -f human --filter id | tail -n +3)
     else
         print_task "${MESSAGE}" 1 true
@@ -216,8 +226,10 @@ do_configure_awx() {
 
     do_function_task "awx inventory create --name \"Katello inventory\" --organization ${ORGANIZATION_ID}"
 
+    local INV_COUNT
     local INV_ID
-    if [ "$(awx inventory get \"Katello inventory\" -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+    INV_COUNT=$(awx inventory get "Katello inventory" -f human --filter id | tail -n +3 | wc -l)
+    if [ "${INV_COUNT}" == "1" ]; then
         INV_ID=$(awx inventory get \"Katello inventory\" -f human --filter id | tail -n +3)
     else
         print_task "${MESSAGE}" 1 true
@@ -226,8 +238,10 @@ do_configure_awx() {
 
     do_function_task "awx inventory_sources create --name Katello --source satellite6 --credential ${CRED_ID} --update_on_launch true --inventory ${INV_ID}"
 
+    local INV_SRC_COUNT
     local INV_SRC_ID
-    if [ "$(awx inventory_sources get Katello -f human --filter id | tail -n +3 | wc -l | xargs echo )" == "1" ]; then
+    INV_SRC_COUNT=$(awx inventory_sources get Katello -f human --filter id | tail -n +3 | wc -l)
+    if [ "${INV_SRC_COUNT}" == "1" ]; then
         INV_SRC_ID=$(awx inventory_sources get Katello -f human --filter id | tail -n +3)
     else
         print_task "${MESSAGE}" 1 true
