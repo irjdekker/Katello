@@ -302,7 +302,7 @@ print_task() {
 }
 
 run_cmd() {
-    echo "[COMMAND] $@" >> "${LOGFILE}"
+    echo "[COMMAND] $*" >> "${LOGFILE}"
     if eval "$@" >> "${LOGFILE}" 2>&1; then
         return 0
     else
