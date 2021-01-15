@@ -45,6 +45,7 @@ IRed='\e[0;31m'
 IGreen='\e[0;32m'
 IYellow='\e[0;33m'
 Reset='\e[0m'
+COMMAND_DEBUG=true
 SOURCEFILE="$HOME/source.sh"
 ENCSOURCEFILE="$SOURCEFILE.enc"
 
@@ -302,7 +303,9 @@ print_task() {
 }
 
 run_cmd() {
-    echo "[COMMAND] $*" >> "${LOGFILE}"
+    if [ "${COMMAND_DEBUG}" = true ] ; then
+        echo "[COMMAND] $*" >> "${LOGFILE}"
+    fi
     if eval "$@" >> "${LOGFILE}" 2>&1; then
         return 0
     else
