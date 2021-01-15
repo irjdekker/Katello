@@ -217,9 +217,9 @@ do_configure_awx() {
 
     local CRED_COUNT
     local CRED_ID
-    CRED_COUNT=$(awx credentials get Katello -f human --filter id | tail -n +3 | wc -l)
+    CRED_COUNT=$(awx credentials get katello_inventory -f human --filter id | tail -n +3 | wc -l)
     if [ "${CRED_COUNT}" == "1" ]; then
-        CRED_ID=$(awx credentials get Katello -f human --filter id | tail -n +3)
+        CRED_ID=$(awx credentials get katello_inventory -f human --filter id | tail -n +3)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -231,7 +231,7 @@ do_configure_awx() {
     local INV_ID
     INV_COUNT=$(awx inventory get "Katello inventory" -f human --filter id | tail -n +3 | wc -l)
     if [ "${INV_COUNT}" == "1" ]; then
-        INV_ID=$(awx inventory get \"Katello inventory\" -f human --filter id | tail -n +3)
+        INV_ID=$(awx inventory get "Katello inventory" -f human --filter id | tail -n +3)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
