@@ -142,6 +142,7 @@ do_install_playbook() {
 
 do_configure_awx() {
     export TOWER_HOST=http://localhost
+    echo "TOWER_USERNAME=admin TOWER_PASSWORD=\"$ADMIN_PASSWORD\" awx login -f human"
     TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human
     local EXPORT
     EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
