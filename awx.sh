@@ -141,18 +141,13 @@ do_install_playbook() {
 }
 
 do_configure_awx() {
-    echo 1
     export TOWER_HOST=http://localhost
-    echo 2
+    TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human
     local EXPORT
-    echo 3
     EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
-    echo 4
+    echo "${EXPORT}"
     do_function_task "${EXPORT}"
-    echo 5
     do_function_task "awx config"
-    echo 6
-
     do_function_task "awx organizations create --name '${ORG_NAME}' --description '${ORG_NAME}' --max_hosts 100"
 
     local ORGANIZATION_ID
