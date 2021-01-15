@@ -142,11 +142,25 @@ do_install_playbook() {
 
 do_configure_awx() {
     export TOWER_HOST=http://localhost
-    echo "TOWER_USERNAME=admin TOWER_PASSWORD=\"$ADMIN_PASSWORD\" awx login -f human"
-    TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human
     local EXPORT
-    EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
-    echo "${EXPORT}"
+    
+    for((i=1;i<=15;++i)); do
+        sleep 60
+        EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
+        if [ "${EXPORT}" == "IsMigrating" ]; then
+            echo "Waiting for $i minutes on AWX installation" >> "${LOGFILE}" 2>&1
+
+        else
+            RETURN="0"
+            break
+        fi
+    done
+
+    if [ "${RETURN}" = "1" ]; then
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi      
+    
     do_function_task "${EXPORT}"
     do_function_task "awx config"
     do_function_task "awx organizations create --name '${ORG_NAME}' --description '${ORG_NAME}' --max_hosts 100"
