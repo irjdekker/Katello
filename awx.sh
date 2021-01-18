@@ -117,19 +117,6 @@ do_install_docker_compose() {
     do_function_task "pip3 install docker-compose"
 }
 
-do_setup_letsencrypt() {
-    do_function_task "mkdir -p /root/certificate"
-    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-auth.sh -o /root/certificate/cf-auth.sh"
-    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-clean.sh -o /root/certificate/cf-clean.sh"
-    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-auth.sh"
-    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-auth.sh"
-    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-clean.sh"
-    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-clean.sh"
-    do_function_task "chmod 700 /root/certificate/*.sh"
-    do_function_task "dnf install certbot python3-certbot-nginx -y"
-    do_function_task "/usr/bin/certbot certonly --dry-run --manual --preferred-challenges dns --manual-auth-hook /root/certificate/cf-auth.sh --manual-cleanup-hook /root/certificate/cf-clean.sh --rsa-key-size 2048 --renew-by-default --register-unsafely-without-email --agree-tos --non-interactive -d awx.tanix.nl"
-}
-
 do_clone_awx() {
     do_function_task "git clone -b 16.0.0 https://github.com/ansible/awx.git"
     do_function_task "git clone https://github.com/ansible/awx-logos.git"
@@ -263,9 +250,24 @@ do_configure_awx() {
     do_function_task "awx inventory_sources update ${INV_SRC_ID}"
 }
 
+do_setup_letsencrypt() {
+    do_function_task "mkdir -p /root/certificate"
+    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-auth.sh -o /root/certificate/cf-auth.sh"
+    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-clean.sh -o /root/certificate/cf-clean.sh"
+    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-auth.sh"
+    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-auth.sh"
+    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-clean.sh"
+    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-clean.sh"
+    do_function_task "chmod 700 /root/certificate/*.sh"
+    do_function_task "dnf install certbot python3-certbot-nginx -y"
+    do_function_task "/usr/bin/certbot certonly --test-cert --manual --preferred-challenges dns --manual-auth-hook /root/certificate/cf-auth.sh --manual-cleanup-hook /root/certificate/cf-clean.sh --rsa-key-size 2048 --renew-by-default --register-unsafely-without-email --agree-tos --non-interactive -d awx.tanix.nl"
+}
+
 do_setup_nginx() {
     do_function_task "dnf install nginx -y"
     do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.conf -o /etc/nginx/conf.d/awx.conf"
+    do_function_task "nginx -t"
+    do_function_task "systemctl restart nginx"
 }
 
 print_padded_text() {
@@ -470,9 +472,6 @@ do_function "Install docker-compose" "do_install_docker_compose"
 ## Correct Python version
 do_task "Correct Python version" "alternatives --set python /usr/bin/python3"
 
-## Install Certbot
-do_function "Install Certbot" "do_setup_letsencrypt"
-
 ## Clone AWX Git repository
 do_function "Clone AWX Git repository" "do_clone_awx"
 
@@ -490,6 +489,12 @@ do_task "Install AWX CLI" "pip3 install awxkit"
 
 ## Configure AWX
 do_function "Configure AWX" "do_configure_awx"
+
+## Install Certbot
+do_function "Install Certbot" "do_setup_letsencrypt"
+
+## Install Nginx
+do_function "Install Nginx" "do_setup_nginx"
 
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"
