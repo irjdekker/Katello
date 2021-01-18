@@ -145,8 +145,8 @@ do_update_inventory() {
     do_function_task "sed -i 's/^.*awx_official.*$/awx_official=true/g' /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*awx_alternate_dns_servers.*$/awx_alternate_dns_servers=\"10.10.5.1\"/g' /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*\(project_data_dir.*\)$/\1/g' /root/awx/installer/inventory"
-    do_function_task "sed -i 's/^.*ssl_certificate=.*$/ssl_certificate=\/etc\/letsencrypt\/live\/awx.tanix.nl\/cert.pem/g' /root/awx/installer/inventory"
-    do_function_task "sed -i 's/^.*\(dockerhub_base=.*\)$/#\1/g' /root/awx/installer/inventory"
+    #do_function_task "sed -i 's/^.*ssl_certificate=.*$/ssl_certificate=\/etc\/letsencrypt\/live\/awx.tanix.nl\/cert.pem/g' /root/awx/installer/inventory"
+    #do_function_task "sed -i 's/^.*\(dockerhub_base=.*\)$/#\1/g' /root/awx/installer/inventory"
 }
 
 do_install_playbook() {
@@ -163,7 +163,6 @@ do_configure_awx() {
         EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
         if [ "${EXPORT}" == "IsMigrating" ]; then
             echo "Waiting for $i minutes on AWX installation" >> "${LOGFILE}" 2>&1
-
         else
             RETURN="0"
             break
@@ -486,7 +485,7 @@ do_function "Install AWX" "do_install_playbook"
 do_task "Install AWX CLI" "pip3 install awxkit"
 
 ## Configure AWX
-# do_function "Configure AWX" "do_configure_awx"
+do_function "Configure AWX" "do_configure_awx"
 
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"
