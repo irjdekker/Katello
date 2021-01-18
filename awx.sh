@@ -139,14 +139,13 @@ do_update_inventory() {
     local SECRET_KEY
     SECRET_KEY=$(openssl rand -base64 30 | sed 's/[\\&*./+!]/\\&/g')
 
+    do_function_task "sed -i 's/^.*host_port.*$/host_port=8080/g' /root/awx/installer/inventory"
     do_function_task "sed -i \"s/^\s*admin_password=password\s*$/admin_password=${ADMIN_PASSWORD}/g\" /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*create_preload_data.*$/create_preload_data=false/g' /root/awx/installer/inventory"
     do_function_task "sed -i \"s/^\s*secret_key=awxsecret\s*$/secret_key=${SECRET_KEY}/g\" /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*awx_official.*$/awx_official=true/g' /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*awx_alternate_dns_servers.*$/awx_alternate_dns_servers=\"10.10.5.1\"/g' /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*\(project_data_dir.*\)$/\1/g' /root/awx/installer/inventory"
-    #do_function_task "sed -i 's/^.*ssl_certificate=.*$/ssl_certificate=\/etc\/letsencrypt\/live\/awx.tanix.nl\/cert.pem/g' /root/awx/installer/inventory"
-    #do_function_task "sed -i 's/^.*\(dockerhub_base=.*\)$/#\1/g' /root/awx/installer/inventory"
 }
 
 do_install_playbook() {
@@ -155,7 +154,7 @@ do_install_playbook() {
 }
 
 do_configure_awx() {
-    export TOWER_HOST=http://localhost
+    export TOWER_HOST=http://localhost:8080
     local EXPORT
     
     for((i=1;i<=15;++i)); do
@@ -262,6 +261,11 @@ do_configure_awx() {
     fi
 
     do_function_task "awx inventory_sources update ${INV_SRC_ID}"
+}
+
+do_setup_nginx() {
+    do_function_task "dnf install nginx -y"
+    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.conf -o /etc/nginx/conf.d/awx.conf"
 }
 
 print_padded_text() {
