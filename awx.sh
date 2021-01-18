@@ -127,7 +127,7 @@ do_setup_letsencrypt() {
     do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-clean.sh"
     do_function_task "chmod 700 /root/certificate/*.sh"
     do_function_task "dnf install certbot python3-certbot-nginx -y"
-    do_function_task "/usr/bin/certbot certonly --manual --preferred-challenges dns --manual-auth-hook /root/certificate/cf-auth.sh --manual-cleanup-hook /root/certificate/cf-clean.sh --rsa-key-size 2048 --renew-by-default --register-unsafely-without-email --agree-tos --non-interactive -d awx.tanix.nl"
+    do_function_task "/usr/bin/certbot certonly --dry-run --manual --preferred-challenges dns --manual-auth-hook /root/certificate/cf-auth.sh --manual-cleanup-hook /root/certificate/cf-clean.sh --rsa-key-size 2048 --renew-by-default --register-unsafely-without-email --agree-tos --non-interactive -d awx.tanix.nl"
 }
 
 do_clone_awx() {
