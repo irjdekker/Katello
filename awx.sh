@@ -452,14 +452,14 @@ do_function "Disable SELinux for AWX" "do_disable_selinux"
 ## Update system
 do_task "Update system" "yum update -y"
 
-## Install Certbot
-do_function "Install Certbot" "do_setup_letsencrypt"
-
 ## Add repositories for AWX
 do_function "Add repositories for AWX" "do_add_repositories"
 
 ## Install required packages
 do_task "Install required packages" "dnf install git gcc gcc-c++ ansible nodejs gettext device-mapper-persistent-data lvm2 bzip2 python3-pip wget vim curl -y"
+
+## Install Certbot
+do_function "Install Certbot" "do_setup_letsencrypt"
 
 ## Install and enable docker service
 do_function "Install and enable docker service" "do_setup_docker"
