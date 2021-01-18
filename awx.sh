@@ -147,6 +147,8 @@ do_update_inventory() {
     do_function_task "sed -i 's/^.*awx_official.*$/awx_official=true/g' /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*awx_alternate_dns_servers.*$/awx_alternate_dns_servers=\"10.10.5.1\"/g' /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*\(project_data_dir.*\)$/\1/g' /root/awx/installer/inventory"
+    do_function_task "sed -i 's/^.*ssl_certificate=.*$/ssl_certificate=\/etc\/letsencrypt\/live\/awx.tanix.nl\/cert.pem/g' /root/awx/installer/inventory"
+    do_function_task "sed -i 's/^.*\(dockerhub_base=.*\)$/#\1/g' /root/awx/installer/inventory"
 }
 
 do_install_playbook() {
