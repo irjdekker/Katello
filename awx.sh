@@ -147,11 +147,11 @@ do_configure_awx() {
     for((i=1;i<=15;++i)); do
         sleep 60
         EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
-        if [ "${EXPORT}" == "IsMigrating" ]; then
-            echo "Waiting for $i minutes on AWX installation" >> "${LOGFILE}" 2>&1
-        else
+        if [[ "${EXPORT}" == *"export"* ]]; then
             RETURN="0"
-            break
+            break        
+        else
+            echo "Waiting for $i minutes on AWX installation" >> "${LOGFILE}" 2>&1
         fi
     done
 
