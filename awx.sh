@@ -126,7 +126,7 @@ do_update_inventory() {
     local SECRET_KEY
     SECRET_KEY=$(openssl rand -base64 30 | sed 's/[\\&*./+!]/\\&/g')
 
-    do_function_task "sed -i 's/^.*host_port.*$/host_port=80/g' /root/awx/installer/inventory"
+    do_function_task "sed -i 's/^.*host_port.*$/host_port=8080/g' /root/awx/installer/inventory"
     do_function_task "sed -i \"s/^\s*admin_password=password\s*$/admin_password=${ADMIN_PASSWORD}/g\" /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*create_preload_data.*$/create_preload_data=false/g' /root/awx/installer/inventory"
     do_function_task "sed -i \"s/^\s*secret_key=awxsecret\s*$/secret_key=${SECRET_KEY}/g\" /root/awx/installer/inventory"
@@ -141,7 +141,7 @@ do_install_playbook() {
 }
 
 do_configure_awx() {
-    export TOWER_HOST=http://localhost
+    export TOWER_HOST=http://localhost:8080
     local EXPORT
     
     for((i=1;i<=15;++i)); do
@@ -488,13 +488,13 @@ do_function "Install AWX" "do_install_playbook"
 do_task "Install AWX CLI" "pip3 install awxkit"
 
 ## Configure AWX
-# do_function "Configure AWX" "do_configure_awx"
+do_function "Configure AWX" "do_configure_awx"
 
 ## Install Certbot
-# do_function "Install Certbot" "do_setup_letsencrypt"
+do_function "Install Certbot" "do_setup_letsencrypt"
 
 ## Install Nginx
-# do_function "Install Nginx" "do_setup_nginx"
+do_function "Install Nginx" "do_setup_nginx"
 
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"
