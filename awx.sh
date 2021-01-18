@@ -131,10 +131,8 @@ do_setup_letsencrypt() {
 }
 
 do_clone_awx() {
-    do_function_task "git clone https://github.com/ansible/awx.git"
-    do_function_task "cd awx"
+    do_function_task "git clone -b 16.0.0 https://github.com/ansible/awx.git"
     do_function_task "git clone https://github.com/ansible/awx-logos.git"
-    do_function_task "cd installer"
 }
 
 do_update_inventory() {
@@ -153,7 +151,7 @@ do_update_inventory() {
 
 do_install_playbook() {
     do_function_task "sed -i \"s|/usr/bin/awx-manage create_preload_data|sleep 600 \&\& exec /usr/bin/awx-manage create_preload_data'|g\" ./roles/local_docker/tasks/compose.yml"
-    do_function_task "ansible-playbook -i inventory install.yml -vv"
+    do_function_task "ansible-playbook -i /root/awx/installer/inventory /root/awx/installer/install.yml -vv"
 }
 
 do_configure_awx() {
