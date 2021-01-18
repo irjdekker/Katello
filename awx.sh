@@ -491,10 +491,10 @@ do_task "Install AWX CLI" "pip3 install awxkit"
 do_function "Configure AWX" "do_configure_awx"
 
 ## Install Certbot
-do_function "Install Certbot" "do_setup_letsencrypt"
+# do_function "Install Certbot" "do_setup_letsencrypt"
 
 ## Install Nginx
-do_function "Install Nginx" "do_setup_nginx"
+# do_function "Install Nginx" "do_setup_nginx"
 
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"
