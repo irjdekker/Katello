@@ -486,7 +486,7 @@ do_function "Install AWX" "do_install_playbook"
 do_task "Install AWX CLI" "pip3 install awxkit"
 
 ## Configure AWX
-do_function "Configure AWX" "do_configure_awx"
+# do_function "Configure AWX" "do_configure_awx"
 
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"
