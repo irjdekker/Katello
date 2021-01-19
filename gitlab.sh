@@ -4,11 +4,11 @@
 
 ## The easiest way to get the script on your machine is:
 ## a) without specifying the password
-## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.sh -o awx.sh 2>/dev/null && bash awx.sh && rm -f awx.sh
-## wget -O awx.sh https://raw.githubusercontent.com/irjdekker/Katello/master/awx.sh 2>/dev/null && bash awx.sh && rm -f awx.sh
+## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/gitlab.sh -o gitlab.sh 2>/dev/null && bash gitlab.sh && rm -f gitlab.sh
+## wget -O gitlab.sh https://raw.githubusercontent.com/irjdekker/Katello/master/gitlab.sh 2>/dev/null && bash gitlab.sh && rm -f gitlab.sh
 ## b) with specifying the password
-## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.sh 2>/dev/null | bash -s <password>
-## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/awx.sh 2>/dev/null | bash -s <password>
+## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/gitlab.sh 2>/dev/null | bash -s <password>
+## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/gitlab.sh 2>/dev/null | bash -s <password>
 
 ## *************************************************************************************************** ##
 ##      __      __     _____  _____          ____  _      ______  _____                                ##
@@ -458,46 +458,46 @@ do_function "Disable SELinux for AWX" "do_disable_selinux"
 do_task "Update system" "yum update -y"
 
 ## Add repositories for AWX
-do_function "Add repositories for AWX" "do_add_repositories"
+# do_function "Add repositories for AWX" "do_add_repositories"
 
 ## Install required packages
-do_task "Install required packages" "dnf install git gcc gcc-c++ ansible nodejs gettext device-mapper-persistent-data lvm2 bzip2 python3-pip wget vim curl -y"
+# do_task "Install required packages" "dnf install git gcc gcc-c++ ansible nodejs gettext device-mapper-persistent-data lvm2 bzip2 python3-pip wget vim curl -y"
 
 ## Install and enable docker service
 do_function "Install and enable docker service" "do_setup_docker"
 
 ## Install docker-compose
-do_function "Install docker-compose" "do_install_docker_compose"
+# do_function "Install docker-compose" "do_install_docker_compose"
 
 ## Correct Python version
-do_task "Correct Python version" "alternatives --set python /usr/bin/python3"
+# do_task "Correct Python version" "alternatives --set python /usr/bin/python3"
 
 ## Clone AWX Git repository
-do_function "Clone AWX Git repository" "do_clone_awx"
+# do_function "Clone AWX Git repository" "do_clone_awx"
 
 ## Create required folders
-do_task "Create required folders" "mkdir -p /var/lib/awx/projects && mkdir -p /var/lib/pgdocker"
+# do_task "Create required folders" "mkdir -p /var/lib/awx/projects && mkdir -p /var/lib/pgdocker"
 
 ## Update inventory file
-do_function "Update inventory file" "do_update_inventory"
+# do_function "Update inventory file" "do_update_inventory"
 
 ## Install AWX
-do_function "Install AWX" "do_install_playbook"
+# do_function "Install AWX" "do_install_playbook"
 
 ## Install AWX CLI
-do_task "Install AWX CLI" "pip3 install awxkit"
+# do_task "Install AWX CLI" "pip3 install awxkit"
 
 ## Configure AWX
-do_function "Configure AWX" "do_configure_awx"
+# do_function "Configure AWX" "do_configure_awx"
 
 ## Install Certbot
-do_function "Install Certbot" "do_setup_letsencrypt"
+# do_function "Install Certbot" "do_setup_letsencrypt"
 
 ## Install Nginx
-do_function "Install Nginx" "do_setup_nginx"
+# do_function "Install Nginx" "do_setup_nginx"
 
 ## Request container IP addresses
-do_task "Request container IP addresses" "docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)"
+# do_task "Request container IP addresses" "docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)"
 
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"
