@@ -333,6 +333,9 @@ do_function "Install and enable docker service" "do_setup_docker"
 ## Install Gitlab container
 do_function "Install Gitlab container" "do_install_gitlab"
 
+## Correct Python version
+do_task "Correct Python version" "alternatives --set python /usr/bin/python3"
+
 ## Install Certbot
 do_function "Install Certbot" "do_setup_letsencrypt"
 
