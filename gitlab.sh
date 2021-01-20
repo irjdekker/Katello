@@ -100,154 +100,17 @@ do_disable_selinux() {
     do_function_task "sestatus | grep mode"
 }
 
-do_add_repositories() {
-    do_function_task "dnf install epel-release -y"
-    do_function_task "dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo -y"
-}
-
 do_setup_docker() {
+    do_function_task "dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo -y"
     do_function_task "dnf install docker-ce -y"
     do_function_task "systemctl start docker"
     do_function_task "systemctl enable docker"
     do_function_task "systemctl --no-pager status docker"
 }
 
-do_install_docker_compose() {
-    do_function_task "pip3 install --upgrade pip"
-    do_function_task "pip3 install docker-compose"
-}
-
-do_clone_awx() {
-    do_function_task "git clone -b 16.0.0 https://github.com/ansible/awx.git"
-    do_function_task "git clone https://github.com/ansible/awx-logos.git"
-}
-
-do_update_inventory() {
-    local SECRET_KEY
-    SECRET_KEY=$(openssl rand -base64 30 | sed 's/[\\&*./+!]/\\&/g')
-
-    do_function_task "sed -i 's/^.*host_port.*$/host_port=8080/g' /root/awx/installer/inventory"
-    do_function_task "sed -i \"s/^\s*admin_password=password\s*$/admin_password=${ADMIN_PASSWORD}/g\" /root/awx/installer/inventory"
-    do_function_task "sed -i 's/^.*create_preload_data.*$/create_preload_data=false/g' /root/awx/installer/inventory"
-    do_function_task "sed -i \"s/^\s*secret_key=awxsecret\s*$/secret_key=${SECRET_KEY}/g\" /root/awx/installer/inventory"
-    do_function_task "sed -i 's/^.*awx_official.*$/awx_official=true/g' /root/awx/installer/inventory"
-    do_function_task "sed -i 's/^.*awx_alternate_dns_servers.*$/awx_alternate_dns_servers=\"10.10.5.1\"/g' /root/awx/installer/inventory"
-    do_function_task "sed -i 's/^.*\(project_data_dir.*\)$/\1/g' /root/awx/installer/inventory"
-}
-
-do_install_playbook() {
-    do_function_task "sed -i \"s|/usr/bin/awx-manage create_preload_data|sleep 600 \&\& exec /usr/bin/awx-manage create_preload_data'|g\" /root/awx/installer/roles/local_docker/tasks/compose.yml"
-    do_function_task "ansible-playbook -i /root/awx/installer/inventory /root/awx/installer/install.yml -vv"
-}
-
-do_configure_awx() {
-    export TOWER_HOST=http://localhost:8080
-    local EXPORT
-    
-    for((i=1;i<=15;++i)); do
-        sleep 60
-        EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
-        if [[ "${EXPORT}" == *"export"* ]]; then
-            RETURN="0"
-            break        
-        else
-            echo "Waiting for $i minutes on AWX installation" >> "${LOGFILE}" 2>&1
-        fi
-    done
-
-    if [ "${RETURN}" = "1" ]; then
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi      
-    
-    do_function_task "${EXPORT}"
-    do_function_task "awx config"
-    do_function_task "awx organizations create --name '${ORG_NAME}' --description '${ORG_NAME}' --max_hosts 100"
-
-    local ORG_COUNT
-    local ORGANIZATION_ID
-    ORG_COUNT=$(awx organizations list --name "${ORG_NAME}" -f human --filter id | tail -n +3 | wc -l)
-    if [ "${ORG_COUNT}" == "1" ]; then
-        ORGANIZATION_ID=$(awx organizations list --name "${ORG_NAME}" -f human --filter id | tail -n +3)
-    else
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi
-
-    do_function_task "awx teams create --name Dekker --description Dekker --organization ${ORGANIZATION_ID}"
-
-    local TEAM_COUNT
-    local TEAM_ID
-    TEAM_COUNT=$(awx teams list --name Dekker -f human --filter id | tail -n +3 | wc -l)
-    if [ "${TEAM_COUNT}" == "1" ]; then
-        TEAM_ID=$(awx teams list --name Dekker -f human --filter id | tail -n +3)
-    else
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi
-
-    do_function_task "awx users create --username irjdekker --email ir.j.dekker@gmail.com --first_name Jeroen --last_name Dekker --password ${PASSWORD}"
-
-    local USER_COUNT
-    local USER_ID
-    USER_COUNT=$(awx users list --username irjdekker -f human --filter id | tail -n +3 | wc -l)
-    if [ "${USER_COUNT}" == "1" ]; then
-        USER_ID=$(awx users list --username irjdekker -f human --filter id | tail -n +3)
-    else
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi
-
-    do_function_task "awx users grant --organization ${ORGANIZATION_ID} --role admin ${USER_ID}"
-    do_function_task "awx users grant --team ${TEAM_ID} --role member ${USER_ID}"
-
-    local CRED_TYPE_COUNT
-    local CRED_TYPE_ID
-    CRED_TYPE_COUNT=$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3 | wc -l)
-    if [ "${CRED_TYPE_COUNT}" == "1" ]; then
-        CRED_TYPE_ID=$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3)
-    else
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi
-
-    do_function_task "awx credentials create --name katello_inventory --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{host: 'https://katello.tanix.nl', username: '${INV_USER}', password: '${INV_PASSWORD}'}\""
-
-    local CRED_COUNT
-    local CRED_ID
-    CRED_COUNT=$(awx credentials get katello_inventory -f human --filter id | tail -n +3 | wc -l)
-    if [ "${CRED_COUNT}" == "1" ]; then
-        CRED_ID=$(awx credentials get katello_inventory -f human --filter id | tail -n +3)
-    else
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi
-
-    do_function_task "awx inventory create --name \"Katello inventory\" --organization ${ORGANIZATION_ID}"
-
-    local INV_COUNT
-    local INV_ID
-    INV_COUNT=$(awx inventory get "Katello inventory" -f human --filter id | tail -n +3 | wc -l)
-    if [ "${INV_COUNT}" == "1" ]; then
-        INV_ID=$(awx inventory get "Katello inventory" -f human --filter id | tail -n +3)
-    else
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi
-
-    do_function_task "awx inventory_sources create --name Katello --source satellite6 --credential ${CRED_ID} --update_on_launch true --inventory ${INV_ID}"
-
-    local INV_SRC_COUNT
-    local INV_SRC_ID
-    INV_SRC_COUNT=$(awx inventory_sources get Katello -f human --filter id | tail -n +3 | wc -l)
-    if [ "${INV_SRC_COUNT}" == "1" ]; then
-        INV_SRC_ID=$(awx inventory_sources get Katello -f human --filter id | tail -n +3)
-    else
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi
-
-    do_function_task "awx inventory_sources update ${INV_SRC_ID}"
+do_install_gitlab() {
+    do_function_task "mkdir -p /srv/gitlab"
+    do_function_task "docker run --detach --hostname gitlab.tanix.nl --publish 8080:80 --name gitlab --restart always --volume /srv/gitlab/config:/etc/gitlab --volume /srv/gitlab/logs:/var/log/gitlab --volume /srv/gitlab/data:/var/opt/gitlab gitlab/gitlab-ee:latest"
 }
 
 do_setup_letsencrypt() {
@@ -260,12 +123,12 @@ do_setup_letsencrypt() {
     do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-clean.sh"
     do_function_task "chmod 700 /root/certificate/*.sh"
     do_function_task "dnf install certbot python3-certbot-nginx -y"
-    do_function_task "/usr/bin/certbot certonly --test-cert --manual --preferred-challenges dns --manual-auth-hook /root/certificate/cf-auth.sh --manual-cleanup-hook /root/certificate/cf-clean.sh --rsa-key-size 2048 --renew-by-default --register-unsafely-without-email --agree-tos --non-interactive -d awx.tanix.nl"
+    do_function_task "/usr/bin/certbot certonly --test-cert --manual --preferred-challenges dns --manual-auth-hook /root/certificate/cf-auth.sh --manual-cleanup-hook /root/certificate/cf-clean.sh --rsa-key-size 2048 --renew-by-default --register-unsafely-without-email --agree-tos --non-interactive -d gitlab.tanix.nl"
 }
 
 do_setup_nginx() {
     do_function_task "dnf install nginx -y"
-    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.conf -o /etc/nginx/conf.d/awx.conf"
+    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/gitlab.conf -o /etc/nginx/conf.d/gitlab.conf"
     do_function_task "nginx -t"
     do_function_task "systemctl restart nginx"
 }
@@ -457,47 +320,20 @@ do_function "Disable SELinux for AWX" "do_disable_selinux"
 ## Update system
 do_task "Update system" "yum update -y"
 
-## Add repositories for AWX
-# do_function "Add repositories for AWX" "do_add_repositories"
-
-## Install required packages
-# do_task "Install required packages" "dnf install git gcc gcc-c++ ansible nodejs gettext device-mapper-persistent-data lvm2 bzip2 python3-pip wget vim curl -y"
-
 ## Install and enable docker service
 do_function "Install and enable docker service" "do_setup_docker"
 
-## Install docker-compose
-# do_function "Install docker-compose" "do_install_docker_compose"
-
-## Correct Python version
-# do_task "Correct Python version" "alternatives --set python /usr/bin/python3"
-
-## Clone AWX Git repository
-# do_function "Clone AWX Git repository" "do_clone_awx"
-
-## Create required folders
-# do_task "Create required folders" "mkdir -p /var/lib/awx/projects && mkdir -p /var/lib/pgdocker"
-
-## Update inventory file
-# do_function "Update inventory file" "do_update_inventory"
-
-## Install AWX
-# do_function "Install AWX" "do_install_playbook"
-
-## Install AWX CLI
-# do_task "Install AWX CLI" "pip3 install awxkit"
-
-## Configure AWX
-# do_function "Configure AWX" "do_configure_awx"
+## Install Gitlab container
+do_function "Install Gitlab container" "do_install_gitlab"
 
 ## Install Certbot
-# do_function "Install Certbot" "do_setup_letsencrypt"
+do_function "Install Certbot" "do_setup_letsencrypt"
 
 ## Install Nginx
-# do_function "Install Nginx" "do_setup_nginx"
+do_function "Install Nginx" "do_setup_nginx"
 
 ## Request container IP addresses
-# do_task "Request container IP addresses" "docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)"
+do_task "Request container IP addresses" "docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)"
 
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"
