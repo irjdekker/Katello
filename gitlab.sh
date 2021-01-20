@@ -114,8 +114,8 @@ do_setup_docker() {
 
 do_install_gitlab() {
     do_function_task "mkdir -p /srv/gitlab"
-    # do_function_task "docker run --detach --hostname gitlab.tanix.nl --publish 8080:80 --name gitlab --restart always --env GITLAB_OMNIBUS_CONFIG=\"gitlab_rails['initial_root_password'] = '12345'\" --volume /srv/gitlab/config:/etc/gitlab --volume /srv/gitlab/logs:/var/log/gitlab --volume /srv/gitlab/data:/var/opt/gitlab gitlab/gitlab-ee:latest"
-    do_function_task "docker run --detach --hostname gitlab.tanix.nl --publish 8080:80 --name gitlab --restart always --volume /srv/gitlab/config:/etc/gitlab --volume /srv/gitlab/logs:/var/log/gitlab --volume /srv/gitlab/data:/var/opt/gitlab gitlab/gitlab-ee:latest"    
+    do_function_task "docker run --detach --hostname gitlab.tanix.nl --publish 8080:80 --name gitlab --restart always --env GITLAB_OMNIBUS_CONFIG=\"gitlab_rails['initial_root_password'] = '1234567890'\" --volume /srv/gitlab/config:/etc/gitlab --volume /srv/gitlab/logs:/var/log/gitlab --volume /srv/gitlab/data:/var/opt/gitlab gitlab/gitlab-ee:latest"
+    # do_function_task "docker run --detach --hostname gitlab.tanix.nl --publish 8080:80 --name gitlab --restart always --volume /srv/gitlab/config:/etc/gitlab --volume /srv/gitlab/logs:/var/log/gitlab --volume /srv/gitlab/data:/var/opt/gitlab gitlab/gitlab-ee:latest"    
 }
 
 do_setup_letsencrypt() {
