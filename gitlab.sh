@@ -327,6 +327,9 @@ do_task "Update system" "yum update -y"
 ## Add repositories
 do_function "Add repositories" "do_add_repositories"
 
+## Install required packages
+do_task "Install required packages" "dnf install python3 wget vim curl -y"
+
 ## Install and enable docker service
 do_function "Install and enable docker service" "do_setup_docker"
 
