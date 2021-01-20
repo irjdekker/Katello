@@ -448,17 +448,17 @@ do_function "Setup chrony" "do_setup_chrony"
 ## Setup NTP
 do_function "Setup NTP" "do_setup_ntp"
 
-## Disable firewalld for AWX
-do_function "Disable firewalld for AWX" "do_disable_firewall"
+## Disable firewalld
+do_function "Disable firewalld" "do_disable_firewall"
 
-## Disable SELinux for AWX
-do_function "Disable SELinux for AWX" "do_disable_selinux"
+## Disable SELinux
+do_function "Disable SELinux" "do_disable_selinux"
 
 ## Update system
 do_task "Update system" "yum update -y"
 
-## Add repositories for AWX
-do_function "Add repositories for AWX" "do_add_repositories"
+## Add repositories
+do_function "Add repositories" "do_add_repositories"
 
 ## Install required packages
 do_task "Install required packages" "dnf install git gcc gcc-c++ ansible nodejs gettext device-mapper-persistent-data lvm2 bzip2 python3-pip wget vim curl -y"

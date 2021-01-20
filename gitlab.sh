@@ -100,8 +100,12 @@ do_disable_selinux() {
     do_function_task "sestatus | grep mode"
 }
 
-do_setup_docker() {
+do_add_repositories() {
+    do_function_task "dnf install epel-release -y"
     do_function_task "dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo -y"
+}
+
+do_setup_docker() {
     do_function_task "dnf install docker-ce -y"
     do_function_task "systemctl start docker"
     do_function_task "systemctl enable docker"
@@ -311,14 +315,17 @@ do_function "Setup chrony" "do_setup_chrony"
 ## Setup NTP
 do_function "Setup NTP" "do_setup_ntp"
 
-## Disable firewalld for AWX
-do_function "Disable firewalld for AWX" "do_disable_firewall"
+## Disable firewalld
+do_function "Disable firewalld" "do_disable_firewall"
 
-## Disable SELinux for AWX
-do_function "Disable SELinux for AWX" "do_disable_selinux"
+## Disable SELinux
+do_function "Disable SELinux" "do_disable_selinux"
 
 ## Update system
 do_task "Update system" "yum update -y"
+
+## Add repositories
+do_function "Add repositories" "do_add_repositories"
 
 ## Install and enable docker service
 do_function "Install and enable docker service" "do_setup_docker"
