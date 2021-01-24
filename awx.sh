@@ -140,6 +140,26 @@ do_install_playbook() {
     do_function_task "ansible-playbook -i /root/awx/installer/inventory /root/awx/installer/install.yml -vv"
 }
 
+do_setup_letsencrypt() {
+    do_function_task "mkdir -p /root/certificate"
+    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-auth.sh -o /root/certificate/cf-auth.sh"
+    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-clean.sh -o /root/certificate/cf-clean.sh"
+    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-auth.sh"
+    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-auth.sh"
+    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-clean.sh"
+    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-clean.sh"
+    do_function_task "chmod 700 /root/certificate/*.sh"
+    do_function_task "dnf install certbot python3-certbot-nginx -y"
+    do_function_task "/usr/bin/certbot certonly --test-cert --manual --preferred-challenges dns --manual-auth-hook /root/certificate/cf-auth.sh --manual-cleanup-hook /root/certificate/cf-clean.sh --rsa-key-size 2048 --renew-by-default --register-unsafely-without-email --agree-tos --non-interactive -d awx.tanix.nl"
+}
+
+do_setup_nginx() {
+    do_function_task "dnf install nginx -y"
+    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.conf -o /etc/nginx/conf.d/awx.conf"
+    do_function_task "nginx -t"
+    do_function_task "systemctl restart nginx"
+}
+
 do_configure_awx() {
     export TOWER_HOST=http://localhost:8080
     local EXPORT
@@ -368,26 +388,6 @@ do_configure_awx() {
     do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/job_templates/${JOB_ID}/survey_spec -X POST -d '${SURVEY}'"
 }
 
-do_setup_letsencrypt() {
-    do_function_task "mkdir -p /root/certificate"
-    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-auth.sh -o /root/certificate/cf-auth.sh"
-    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-clean.sh -o /root/certificate/cf-clean.sh"
-    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-auth.sh"
-    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-auth.sh"
-    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-clean.sh"
-    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-clean.sh"
-    do_function_task "chmod 700 /root/certificate/*.sh"
-    do_function_task "dnf install certbot python3-certbot-nginx -y"
-    do_function_task "/usr/bin/certbot certonly --test-cert --manual --preferred-challenges dns --manual-auth-hook /root/certificate/cf-auth.sh --manual-cleanup-hook /root/certificate/cf-clean.sh --rsa-key-size 2048 --renew-by-default --register-unsafely-without-email --agree-tos --non-interactive -d awx.tanix.nl"
-}
-
-do_setup_nginx() {
-    do_function_task "dnf install nginx -y"
-    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.conf -o /etc/nginx/conf.d/awx.conf"
-    do_function_task "nginx -t"
-    do_function_task "systemctl restart nginx"
-}
-
 print_padded_text() {
     pad=$(printf '%0.1s' "*"{1..70})
     padlength=140
@@ -605,9 +605,6 @@ do_function "Install AWX" "do_install_playbook"
 ## Install AWX CLI
 do_task "Install AWX CLI" "pip3 install awxkit"
 
-## Configure AWX
-do_function "Configure AWX" "do_configure_awx"
-
 ## Install Certbot
 do_function "Install Certbot" "do_setup_letsencrypt"
 
@@ -625,6 +622,9 @@ do_task "Install JQ" "yum install jq -y"
 
 ## Update system (again)
 do_task "Update system" "yum update -y"
+
+## Configure AWX
+do_function "Configure AWX" "do_configure_awx"
 
 # Restore cursor
 tput cvvis
