@@ -237,7 +237,7 @@ do_configure_awx() {
     fi
 
     #do_function_task "awx credentials create --name gitlab --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{username: '${GITLAB_USER}', password: '${GITLAB_PASSWORD}'}\""
-    do_function_task "awx credentials create --name gitlab --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{username: 'root', password: '1234567890'\""
+    do_function_task "awx credentials create --name gitlab --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{username: 'root', password: '1234567890'}\""
 
     local CRED_TYPE_COUNT
     local CRED_TYPE_ID
