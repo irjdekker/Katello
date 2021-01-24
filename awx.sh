@@ -143,13 +143,13 @@ do_install_playbook() {
 do_configure_awx() {
     export TOWER_HOST=http://localhost:8080
     local EXPORT
-    
+
     for((i=1;i<=15;++i)); do
         sleep 60
         EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
         if [[ "${EXPORT}" == *"export"* ]]; then
             RETURN="0"
-            break        
+            break
         else
             echo "Waiting for $i minutes on AWX installation" >> "${LOGFILE}" 2>&1
         fi
@@ -158,10 +158,14 @@ do_configure_awx() {
     if [ "${RETURN}" = "1" ]; then
         print_task "${MESSAGE}" 1 true
         exit 1
-    fi      
-    
+    fi
+
     do_function_task "${EXPORT}"
     do_function_task "awx config"
+
+    ## *************************************************************************************************** ##
+    ## Create organization
+    ## *************************************************************************************************** ##    
     do_function_task "awx organizations create --name '${ORG_NAME}' --description '${ORG_NAME}' --max_hosts 100"
 
     local ORG_COUNT
@@ -174,6 +178,9 @@ do_configure_awx() {
         exit 1
     fi
 
+    ## *************************************************************************************************** ##
+    ## Create team
+    ## *************************************************************************************************** ##    
     do_function_task "awx teams create --name Dekker --description Dekker --organization ${ORGANIZATION_ID}"
 
     local TEAM_COUNT
@@ -186,6 +193,9 @@ do_configure_awx() {
         exit 1
     fi
 
+    ## *************************************************************************************************** ##
+    ## Create user
+    ## *************************************************************************************************** ##    
     do_function_task "awx users create --username irjdekker --email ir.j.dekker@gmail.com --first_name Jeroen --last_name Dekker --password ${PASSWORD}"
 
     local USER_COUNT
@@ -201,6 +211,9 @@ do_configure_awx() {
     do_function_task "awx users grant --organization ${ORGANIZATION_ID} --role admin ${USER_ID}"
     do_function_task "awx users grant --team ${TEAM_ID} --role member ${USER_ID}"
 
+    ## *************************************************************************************************** ##
+    ## Create credentials
+    ## *************************************************************************************************** ##    
     local CRED_TYPE_COUNT
     local CRED_TYPE_ID
     CRED_TYPE_COUNT=$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3 | wc -l)
@@ -213,6 +226,36 @@ do_configure_awx() {
 
     do_function_task "awx credentials create --name katello_inventory --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{host: 'https://katello.tanix.nl', username: '${INV_USER}', password: '${INV_PASSWORD}'}\""
 
+    local CRED_TYPE_COUNT
+    local CRED_TYPE_ID
+    CRED_TYPE_COUNT=$(awx credential_types get "Source Control" -f human --filter id | tail -n +3 | wc -l)
+    if [ "${CRED_TYPE_COUNT}" == "1" ]; then
+        CRED_TYPE_ID=$(awx credential_types get "Source Control" -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+
+    do_function_task "awx credentials create --name gitlab --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{username: '${GITLAB_USER}', password: '${GITLAB_PASSWORD}'}\""
+
+    local CRED_TYPE_COUNT
+    local CRED_TYPE_ID
+    CRED_TYPE_COUNT=$(awx credential_types get "Vault" -f human --filter id | tail -n +3 | wc -l)
+    if [ "${CRED_TYPE_COUNT}" == "1" ]; then
+        CRED_TYPE_ID=$(awx credential_types get "Vault" -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+
+    do_function_task "awx credentials create --name vault --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{vault_password: '${VAULT_PASSWORD}'}\""
+
+    ## *************************************************************************************************** ##
+    ## Create inventories
+    ## *************************************************************************************************** ##    
+    do_function_task "awx inventory create --name \"Empty inventory\" --description \"Empty inventory\" --organization ${ORGANIZATION_ID}"
+    do_function_task "awx inventory create --name \"Katello inventory\" --description \"Katello inventory\" --organization ${ORGANIZATION_ID}"
+
     local CRED_COUNT
     local CRED_ID
     CRED_COUNT=$(awx credentials get katello_inventory -f human --filter id | tail -n +3 | wc -l)
@@ -222,9 +265,7 @@ do_configure_awx() {
         print_task "${MESSAGE}" 1 true
         exit 1
     fi
-
-    do_function_task "awx inventory create --name \"Katello inventory\" --organization ${ORGANIZATION_ID}"
-
+    
     local INV_COUNT
     local INV_ID
     INV_COUNT=$(awx inventory get "Katello inventory" -f human --filter id | tail -n +3 | wc -l)
@@ -235,7 +276,7 @@ do_configure_awx() {
         exit 1
     fi
 
-    do_function_task "awx inventory_sources create --name Katello --source satellite6 --credential ${CRED_ID} --update_on_launch true --inventory ${INV_ID}"
+    do_function_task "awx inventory_sources create --name Katello --description Katello --source satellite6 --credential ${CRED_ID} --update_on_launch true --inventory ${INV_ID}"
 
     local INV_SRC_COUNT
     local INV_SRC_ID
@@ -248,6 +289,46 @@ do_configure_awx() {
     fi
 
     do_function_task "awx inventory_sources update ${INV_SRC_ID}"
+
+    ## *************************************************************************************************** ##
+    ## Create projects
+    ## *************************************************************************************************** ##
+    local CRED_COUNT
+    local CRED_ID
+    CRED_COUNT=$(awx credentials get gitlab -f human --filter id | tail -n +3 | wc -l)
+    if [ "${CRED_COUNT}" == "1" ]; then
+        CRED_ID=$(awx credentials get gitlab -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+    
+    do_function_task "awx projects create --name \"VM deployment\" --description \"VM deployment\" --organization ${ORGANIZATION_ID} --scm_type git --scm_url http://gitlab.tanix.nl/root/iaas.git --credential ${CRED_ID} --scm_update_on_launch true"
+
+    ## *************************************************************************************************** ##
+    ## Create templates
+    ## *************************************************************************************************** ## 
+    local PROJ_COUNT
+    local PROJ_ID
+    PROJ_COUNT=$(awx projects get "VM deployment" -f human --filter id | tail -n +3 | wc -l)
+    if [ "${PROJ_COUNT}" == "1" ]; then
+        PROJ_ID=$(awx projects get "VM deployment" -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+    
+    local INV_COUNT
+    local INV_ID
+    INV_COUNT=$(awx inventory get "Empty inventory" -f human --filter id | tail -n +3 | wc -l)
+    if [ "${INV_COUNT}" == "1" ]; then
+        INV_ID=$(awx inventory get "Empty inventory" -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi    
+
+    do_function_task "awx job_templates create --name \"Install Server (VM)\" --description \"Install Server (VM)\" --project ${PROJ_ID} --playbook install-vm-v2.yml --job_type run --inventory ${INV_ID} --forks 5 --allow_simultaneous true --survey_enabled true --extra-vars \"---\ntemplate_sec_env: NS\ntemplate_vault_env: PRD\""
 }
 
 do_setup_letsencrypt() {
