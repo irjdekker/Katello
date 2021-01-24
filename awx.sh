@@ -611,9 +611,6 @@ do_function "Install Certbot" "do_setup_letsencrypt"
 ## Install Nginx
 do_function "Install Nginx" "do_setup_nginx"
 
-## Request container IP addresses
-do_task "Request container IP addresses" "docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)"
-
 ## Install VMWare Tools
 do_task "Install VMWare Tools" "yum install open-vm-tools -y"
 
