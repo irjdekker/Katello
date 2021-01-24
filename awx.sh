@@ -329,6 +329,41 @@ do_configure_awx() {
     fi    
 
     do_function_task "awx job_templates create --name \"Install Server (VM)\" --description \"Install Server (VM)\" --project ${PROJ_ID} --playbook install-vm-v2.yml --job_type run --inventory ${INV_ID} --forks 5 --allow_simultaneous true --survey_enabled true --extra-vars \"---\ntemplate_sec_env: NS\ntemplate_vault_env: PRD\""
+
+    local CRED_COUNT
+    local CRED_ID
+    CRED_COUNT=$(awx credentials get vault -f human --filter id | tail -n +3 | wc -l)
+    if [ "${CRED_COUNT}" == "1" ]; then
+        CRED_ID=$(awx credentials get vault -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi
+    
+    local TMPL_COUNT
+    local TMPL_ID
+    TMPL_COUNT=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3 | wc -l)
+    if [ "${TMPL_COUNT}" == "1" ]; then
+        TMPL_ID=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi    
+
+    do_function_task "awx job_templates associate --credential ${CRED_ID} ${TMPL_ID}"
+    
+    local JOB_COUNT
+    local JOB_ID
+    JOB_COUNT=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3 | wc -l)
+    if [ "${JOB_COUNT}" == "1" ]; then
+        JOB_ID=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3)
+    else
+        print_task "${MESSAGE}" 1 true
+        exit 1
+    fi     
+    
+    SURVEY='{"name":"","description":"","spec":[{"question_name":"Hostname","question_description":"FQDN of the system to deploy","required":true,"type":"text","variable":"survey_hostname","min":0,"max":1024,"default":"","choices":"","new_question":false},{"question_name":"Select the OS Version","question_description":"Select the OS Version","required":true,"type":"multiplechoice","variable":"survey_os_version","min":0,"max":1024,"default":"CentOS 8","choices":"CentOS 7\nCentOS 8","new_question":false},{"question_name":"Lifecycle environment","question_description":"Select the lifecycle environment","required":true,"type":"multiplechoice","variable":"survey_lifecycle","min":0,"max":1024,"default":"production","choices":"development\ntest\nacceptance\nproduction","new_question":false},{"question_name":"Location","question_description":"Select the location","required":true,"type":"multiplechoice","variable":"survey_location","min":0,"max":1024,"default":"home","choices":"home","new_question":false},{"question_name":"Role selection","question_description":"Enter the system_roles you want to select","required":true,"type":"multiplechoice","variable":"survey_role","min":0,"max":1024,"default":"none","choices":"web\nsmtp\ntr_cadappl\nnone","new_question":false}]}'
+    do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/job_templates/${JOB_ID}/survey_spec -X POST -d '${SURVEY}'"
 }
 
 do_setup_letsencrypt() {
