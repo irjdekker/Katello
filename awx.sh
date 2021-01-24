@@ -165,7 +165,7 @@ do_configure_awx() {
 
     ## *************************************************************************************************** ##
     ## Create organization
-    ## *************************************************************************************************** ##    
+    ## *************************************************************************************************** ##
     do_function_task "awx organizations create --name '${ORG_NAME}' --description '${ORG_NAME}' --max_hosts 100"
 
     local ORG_COUNT
@@ -180,7 +180,7 @@ do_configure_awx() {
 
     ## *************************************************************************************************** ##
     ## Create team
-    ## *************************************************************************************************** ##    
+    ## *************************************************************************************************** ##
     do_function_task "awx teams create --name Dekker --description Dekker --organization ${ORGANIZATION_ID}"
 
     local TEAM_COUNT
@@ -195,7 +195,7 @@ do_configure_awx() {
 
     ## *************************************************************************************************** ##
     ## Create user
-    ## *************************************************************************************************** ##    
+    ## *************************************************************************************************** ##
     do_function_task "awx users create --username irjdekker --email ir.j.dekker@gmail.com --first_name Jeroen --last_name Dekker --password ${PASSWORD}"
 
     local USER_COUNT
@@ -213,7 +213,7 @@ do_configure_awx() {
 
     ## *************************************************************************************************** ##
     ## Create credentials
-    ## *************************************************************************************************** ##    
+    ## *************************************************************************************************** ##
     local CRED_TYPE_COUNT
     local CRED_TYPE_ID
     CRED_TYPE_COUNT=$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3 | wc -l)
@@ -236,7 +236,8 @@ do_configure_awx() {
         exit 1
     fi
 
-    do_function_task "awx credentials create --name gitlab --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{username: '${GITLAB_USER}', password: '${GITLAB_PASSWORD}'}\""
+    #do_function_task "awx credentials create --name gitlab --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{username: '${GITLAB_USER}', password: '${GITLAB_PASSWORD}'}\""
+    do_function_task "awx credentials create --name gitlab --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{username: 'root', password: '1234567890\""
 
     local CRED_TYPE_COUNT
     local CRED_TYPE_ID
@@ -248,11 +249,12 @@ do_configure_awx() {
         exit 1
     fi
 
-    do_function_task "awx credentials create --name vault --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{vault_password: '${VAULT_PASSWORD}'}\""
+    # do_function_task "awx credentials create --name vault --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{vault_password: '${VAULT_PASSWORD}'}\""
+    do_function_task "awx credentials create --name vault --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{vault_password: '1234567890'}\""
 
     ## *************************************************************************************************** ##
     ## Create inventories
-    ## *************************************************************************************************** ##    
+    ## *************************************************************************************************** ##
     do_function_task "awx inventory create --name \"Empty inventory\" --description \"Empty inventory\" --organization ${ORGANIZATION_ID}"
     do_function_task "awx inventory create --name \"Katello inventory\" --description \"Katello inventory\" --organization ${ORGANIZATION_ID}"
 
@@ -265,7 +267,7 @@ do_configure_awx() {
         print_task "${MESSAGE}" 1 true
         exit 1
     fi
-    
+
     local INV_COUNT
     local INV_ID
     INV_COUNT=$(awx inventory get "Katello inventory" -f human --filter id | tail -n +3 | wc -l)
@@ -302,12 +304,12 @@ do_configure_awx() {
         print_task "${MESSAGE}" 1 true
         exit 1
     fi
-    
+
     do_function_task "awx projects create --name \"VM deployment\" --description \"VM deployment\" --organization ${ORGANIZATION_ID} --scm_type git --scm_url http://gitlab.tanix.nl/root/iaas.git --credential ${CRED_ID} --scm_update_on_launch true"
 
     ## *************************************************************************************************** ##
     ## Create templates
-    ## *************************************************************************************************** ## 
+    ## *************************************************************************************************** ##
     local PROJ_COUNT
     local PROJ_ID
     PROJ_COUNT=$(awx projects get "VM deployment" -f human --filter id | tail -n +3 | wc -l)
@@ -317,7 +319,7 @@ do_configure_awx() {
         print_task "${MESSAGE}" 1 true
         exit 1
     fi
-    
+
     local INV_COUNT
     local INV_ID
     INV_COUNT=$(awx inventory get "Empty inventory" -f human --filter id | tail -n +3 | wc -l)
@@ -326,7 +328,7 @@ do_configure_awx() {
     else
         print_task "${MESSAGE}" 1 true
         exit 1
-    fi    
+    fi
 
     do_function_task "awx job_templates create --name \"Install Server (VM)\" --description \"Install Server (VM)\" --project ${PROJ_ID} --playbook install-vm-v2.yml --job_type run --inventory ${INV_ID} --forks 5 --allow_simultaneous true --survey_enabled true --extra-vars \"---\ntemplate_sec_env: NS\ntemplate_vault_env: PRD\""
 
@@ -339,7 +341,7 @@ do_configure_awx() {
         print_task "${MESSAGE}" 1 true
         exit 1
     fi
-    
+
     local TMPL_COUNT
     local TMPL_ID
     TMPL_COUNT=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3 | wc -l)
@@ -348,10 +350,10 @@ do_configure_awx() {
     else
         print_task "${MESSAGE}" 1 true
         exit 1
-    fi    
+    fi
 
     do_function_task "awx job_templates associate --credential ${CRED_ID} ${TMPL_ID}"
-    
+
     local JOB_COUNT
     local JOB_ID
     JOB_COUNT=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3 | wc -l)
@@ -360,8 +362,8 @@ do_configure_awx() {
     else
         print_task "${MESSAGE}" 1 true
         exit 1
-    fi     
-    
+    fi
+
     SURVEY='{"name":"","description":"","spec":[{"question_name":"Hostname","question_description":"FQDN of the system to deploy","required":true,"type":"text","variable":"survey_hostname","min":0,"max":1024,"default":"","choices":"","new_question":false},{"question_name":"Select the OS Version","question_description":"Select the OS Version","required":true,"type":"multiplechoice","variable":"survey_os_version","min":0,"max":1024,"default":"CentOS 8","choices":"CentOS 7\nCentOS 8","new_question":false},{"question_name":"Lifecycle environment","question_description":"Select the lifecycle environment","required":true,"type":"multiplechoice","variable":"survey_lifecycle","min":0,"max":1024,"default":"production","choices":"development\ntest\nacceptance\nproduction","new_question":false},{"question_name":"Location","question_description":"Select the location","required":true,"type":"multiplechoice","variable":"survey_location","min":0,"max":1024,"default":"home","choices":"home","new_question":false},{"question_name":"Role selection","question_description":"Enter the system_roles you want to select","required":true,"type":"multiplechoice","variable":"survey_role","min":0,"max":1024,"default":"none","choices":"web\nsmtp\ntr_cadappl\nnone","new_question":false}]}'
     do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/job_templates/${JOB_ID}/survey_spec -X POST -d '${SURVEY}'"
 }
