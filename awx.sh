@@ -354,7 +354,7 @@ do_configure_awx() {
     fi
 
     VARIABLES='{"template_sec_env": "NS", "template_vault_env": "PRD"}'
-    do_function_task "awx job_templates create --name \"Install Server (VM)\" --description \"Install Server (VM)\" --project ${PROJ_ID} --playbook install-vm-v2.yml --job_type run --inventory ${INV_ID} --forks 5 --allow_simultaneous true --survey_enabled true --extra-vars '${VARIABLES}'"
+    do_function_task "awx job_templates create --name \"Install Server (VM)\" --description \"Install Server (VM)\" --project ${PROJ_ID} --playbook install-vm-v2.yml --job_type run --inventory ${INV_ID} --forks 5 --allow_simultaneous true --survey_enabled true --extra_vars '${VARIABLES}'"
 
     local CRED_COUNT
     local CRED_ID
