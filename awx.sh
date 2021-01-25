@@ -192,7 +192,7 @@ do_configure_awx() {
     local ORGANIZATION_ID
     ORG_COUNT=$(awx organizations list --name "${ORG_NAME}" -f human --filter id | tail -n +3 | wc -l)
     if [ "${ORG_COUNT}" == "1" ]; then
-        ORGANIZATION_ID=$(awx organizations list --name "${ORG_NAME}" -f human --filter id | tail -n +3)
+        ORGANIZATION_ID=$(awx organizations list --name "${ORG_NAME}" -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -207,7 +207,7 @@ do_configure_awx() {
     local TEAM_ID
     TEAM_COUNT=$(awx teams list --name Dekker -f human --filter id | tail -n +3 | wc -l)
     if [ "${TEAM_COUNT}" == "1" ]; then
-        TEAM_ID=$(awx teams list --name Dekker -f human --filter id | tail -n +3)
+        TEAM_ID=$(awx teams list --name Dekker -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -222,7 +222,7 @@ do_configure_awx() {
     local USER_ID
     USER_COUNT=$(awx users list --username irjdekker -f human --filter id | tail -n +3 | wc -l)
     if [ "${USER_COUNT}" == "1" ]; then
-        USER_ID=$(awx users list --username irjdekker -f human --filter id | tail -n +3)
+        USER_ID=$(awx users list --username irjdekker -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -238,7 +238,7 @@ do_configure_awx() {
     local CRED_TYPE_ID
     CRED_TYPE_COUNT=$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3 | wc -l)
     if [ "${CRED_TYPE_COUNT}" == "1" ]; then
-        CRED_TYPE_ID=$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3)
+        CRED_TYPE_ID=$(awx credential_types get "Red Hat Satellite 6" -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -250,7 +250,7 @@ do_configure_awx() {
     local CRED_TYPE_ID
     CRED_TYPE_COUNT=$(awx credential_types get "Source Control" -f human --filter id | tail -n +3 | wc -l)
     if [ "${CRED_TYPE_COUNT}" == "1" ]; then
-        CRED_TYPE_ID=$(awx credential_types get "Source Control" -f human --filter id | tail -n +3)
+        CRED_TYPE_ID=$(awx credential_types get "Source Control" -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -263,7 +263,7 @@ do_configure_awx() {
     local CRED_TYPE_ID
     CRED_TYPE_COUNT=$(awx credential_types get "Vault" -f human --filter id | tail -n +3 | wc -l)
     if [ "${CRED_TYPE_COUNT}" == "1" ]; then
-        CRED_TYPE_ID=$(awx credential_types get "Vault" -f human --filter id | tail -n +3)
+        CRED_TYPE_ID=$(awx credential_types get "Vault" -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -282,7 +282,7 @@ do_configure_awx() {
     local CRED_ID
     CRED_COUNT=$(awx credentials get katello_inventory -f human --filter id | tail -n +3 | wc -l)
     if [ "${CRED_COUNT}" == "1" ]; then
-        CRED_ID=$(awx credentials get katello_inventory -f human --filter id | tail -n +3)
+        CRED_ID=$(awx credentials get katello_inventory -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -292,7 +292,7 @@ do_configure_awx() {
     local INV_ID
     INV_COUNT=$(awx inventory get "Katello inventory" -f human --filter id | tail -n +3 | wc -l)
     if [ "${INV_COUNT}" == "1" ]; then
-        INV_ID=$(awx inventory get "Katello inventory" -f human --filter id | tail -n +3)
+        INV_ID=$(awx inventory get "Katello inventory" -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -304,7 +304,7 @@ do_configure_awx() {
     local INV_SRC_ID
     INV_SRC_COUNT=$(awx inventory_sources get Katello -f human --filter id | tail -n +3 | wc -l)
     if [ "${INV_SRC_COUNT}" == "1" ]; then
-        INV_SRC_ID=$(awx inventory_sources get Katello -f human --filter id | tail -n +3)
+        INV_SRC_ID=$(awx inventory_sources get Katello -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -319,7 +319,7 @@ do_configure_awx() {
     local CRED_ID
     CRED_COUNT=$(awx credentials get gitlab -f human --filter id | tail -n +3 | wc -l)
     if [ "${CRED_COUNT}" == "1" ]; then
-        CRED_ID=$(awx credentials get gitlab -f human --filter id | tail -n +3)
+        CRED_ID=$(awx credentials get gitlab -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -334,12 +334,12 @@ do_configure_awx() {
     local PROJ_ID
     PROJ_COUNT=$(awx projects get "VM deployment" -f human --filter id | tail -n +3 | wc -l)
     if [ "${PROJ_COUNT}" == "1" ]; then
-        PROJ_ID=$(awx projects get "VM deployment" -f human --filter id | tail -n +3)
+        PROJ_ID=$(awx projects get "VM deployment" -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
     fi
-    
+
     do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/projects/${JOB_ID}/update/ -X POST"
     sleep 60
 
@@ -347,7 +347,7 @@ do_configure_awx() {
     local INV_ID
     INV_COUNT=$(awx inventory get "Empty inventory" -f human --filter id | tail -n +3 | wc -l)
     if [ "${INV_COUNT}" == "1" ]; then
-        INV_ID=$(awx inventory get "Empty inventory" -f human --filter id | tail -n +3)
+        INV_ID=$(awx inventory get "Empty inventory" -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -359,7 +359,7 @@ do_configure_awx() {
     local CRED_ID
     CRED_COUNT=$(awx credentials get vault -f human --filter id | tail -n +3 | wc -l)
     if [ "${CRED_COUNT}" == "1" ]; then
-        CRED_ID=$(awx credentials get vault -f human --filter id | tail -n +3)
+        CRED_ID=$(awx credentials get vault -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -369,7 +369,7 @@ do_configure_awx() {
     local TMPL_ID
     TMPL_COUNT=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3 | wc -l)
     if [ "${TMPL_COUNT}" == "1" ]; then
-        TMPL_ID=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3)
+        TMPL_ID=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
@@ -381,7 +381,7 @@ do_configure_awx() {
     local JOB_ID
     JOB_COUNT=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3 | wc -l)
     if [ "${JOB_COUNT}" == "1" ]; then
-        JOB_ID=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3)
+        JOB_ID=$(awx job_templates get "Install Server (VM)" -f human --filter id | tail -n +3 | xargs)
     else
         print_task "${MESSAGE}" 1 true
         exit 1
