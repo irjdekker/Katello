@@ -405,6 +405,7 @@ do_install_hammer() {
     do_function_task "docker exec awx_task sed -i 's/localhost/katello.tanix.nl/g' /var/lib/awx/.hammer/cli.modules.d/foreman.yml"
     do_function_task "docker exec awx_task sed -i 's/example/${ADMIN_PASSWORD}/g' /var/lib/awx/.hammer/cli.modules.d/foreman.yml"
     do_function_task "docker exec awx_task sed -i 's/seconds//g' /var/lib/awx/.hammer/cli.modules.d/foreman.yml"
+    do_function_task "docker exec awx_task hammer --fetch-ca-cert https://katello.tanix.nl/"
 }
 
 print_padded_text() {
