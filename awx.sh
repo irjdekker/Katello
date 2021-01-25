@@ -339,6 +339,9 @@ do_configure_awx() {
         print_task "${MESSAGE}" 1 true
         exit 1
     fi
+    
+    do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/projects/${JOB_ID}/update/ -X POST"
+    sleep 60
 
     local INV_COUNT
     local INV_ID
