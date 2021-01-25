@@ -392,6 +392,21 @@ do_configure_awx() {
     do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/job_templates/${JOB_ID}/survey_spec/ -X POST -d '${SURVEY}'"
 }
 
+do_install_hammer() {
+    do_function_task "docker exec -it awx_task yum -y localinstall https://yum.theforeman.org/releases/2.3/el8/x86_64/foreman-release.rpm"
+    do_function_task "docker exec -it awx_task yum -y localinstall https://fedorapeople.org/groups/katello/releases/yum/3.18/katello/el8/x86_64/katello-repos-latest.rpm"
+    do_function_task "docker exec -it awx_task yum -y localinstall https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm"
+    do_function_task "docker exec -it awx_task yum -y install rubygem-hammer_cli_katello"
+    do_function_task "docker exec -it awx_task mkdir -p ~/.hammer/cli.modules.d"
+    do_function_task "docker exec -it awx_task chmod 700 ~/.hammer"
+    do_function_task "docker exec -it awx_task chmod 700 ~/.hammer/cli.modules.d"
+    do_function_task "docker exec -it awx_task cat /etc/hammer/cli.modules.d/foreman.yml | grep -e ':foreman' -e ':host' -e ':username' -e ':password' -e ':refresh_cache' -e ':request_timeout' | sed 's/#//g' > ~/.hammer/cli.modules.d/foreman.yml"
+    do_function_task "docker exec -it awx_task chmod 600 ~/.hammer/cli.modules.d/foreman.yml"
+    do_function_task "docker exec -it awx_task sed -i 's/localhost/katello.tanix.nl/g' ~/.hammer/cli.modules.d/foreman.yml"
+    do_function_task "docker exec -it awx_task sed -i 's/example/${ADMIN_PASSWORD}/g' ~/.hammer/cli.modules.d/foreman.yml"
+    do_function_task "docker exec -it awx_task sed -i 's/seconds//g' ~/.hammer/cli.modules.d/foreman.yml"
+}
+
 print_padded_text() {
     pad=$(printf '%0.1s' "*"{1..70})
     padlength=140
@@ -626,6 +641,9 @@ do_task "Update system" "yum update -y"
 
 ## Configure AWX
 do_function "Configure AWX" "do_configure_awx"
+
+## Install Hammer CLI
+do_function "Install Hammer CLI" "do_install_hammer"
 
 # Restore cursor
 tput cvvis
