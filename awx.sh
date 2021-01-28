@@ -279,8 +279,10 @@ do_configure_awx() {
         print_task "${MESSAGE}" 1 true
         exit 1
     fi
-
-    do_function_task "awx credentials create --name root --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{username: 'root', ssh_key_data: '********'}\""
+    
+    local SSH_KEY
+    SSH_KEY=$(cat /tmp/key)
+    do_function_task "awx credentials create --name root --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{username: 'root', ssh_key_data: '${SSH_KEY}'}\""
 
     ## *************************************************************************************************** ##
     ## Create inventories
