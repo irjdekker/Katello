@@ -163,7 +163,11 @@ do_setup_nginx() {
 do_configure_awx() {
     export TOWER_HOST=http://localhost:8080
     local EXPORT
-
+    local SSH_KEY
+    SSH_KEY=$(cat /tmp/key)
+    
+    do_function_task "rm -f /tmp/key"
+    
     for((i=1;i<=15;++i)); do
         sleep 60
         EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
@@ -280,8 +284,6 @@ do_configure_awx() {
         exit 1
     fi
     
-    local SSH_KEY
-    SSH_KEY=$(cat /tmp/key)
     do_function_task "awx credentials create --name root --organization ${ORGANIZATION_ID} --credential_type ${CRED_TYPE_ID} --inputs \"{username: 'root', ssh_key_data: '${SSH_KEY}'}\""
 
     ## *************************************************************************************************** ##
@@ -426,7 +428,7 @@ do_configure_awx() {
     do_function_task "awx job_templates associate --credential ${CRED2_ID} ${TMPL2_ID}"
 
     SURVEY='{"name":"","description":"","spec":[{"question_name":"Hostname","question_description":"FQDN of the system to deploy","required":true,"type":"text","variable":"survey_hostname","min":0,"max":1024,"default":"","choices":"","new_question":false},{"question_name":"Select the OS Version","question_description":"Select the OS Version","required":true,"type":"multiplechoice","variable":"survey_os_version","min":0,"max":1024,"default":"CentOS 8","choices":"CentOS 7\nCentOS 8","new_question":false},{"question_name":"Lifecycle environment","question_description":"Select the lifecycle environment","required":true,"type":"multiplechoice","variable":"survey_lifecycle","min":0,"max":1024,"default":"production","choices":"development\ntest\nacceptance\nproduction","new_question":false},{"question_name":"Location","question_description":"Select the location","required":true,"type":"multiplechoice","variable":"survey_location","min":0,"max":1024,"default":"home","choices":"home","new_question":false},{"question_name":"Role selection","question_description":"Enter the system_roles you want to select","required":true,"type":"multiplechoice","variable":"survey_role","min":0,"max":1024,"default":"none","choices":"web\nsmtp\ntr_cadappl\nnone","new_question":false}]}'
-    do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/job_templates/${TMPL3_ID}/survey_spec/ -X POST -d '${SURVEY}'"
+    do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/workflow_job_templates/${TMPL3_ID}/survey_spec/ -X POST -d '${SURVEY}'"
 
     ## *************************************************************************************************** ##
     ## Create job templates nodes
