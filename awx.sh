@@ -431,8 +431,8 @@ do_configure_awx() {
     ## *************************************************************************************************** ##
     ## Create job templates nodes
     ## *************************************************************************************************** ##
-    do_function_task "awx workflow_job_template_nodes create --workflow_job_template {TMPL3_ID} --unified_job_template {TMPL1_ID} --identifier \"Step 1\""
-    do_function_task "awx workflow_job_template_nodes create --workflow_job_template {TMPL3_ID} --unified_job_template {TMPL2_ID} --identifier \"Step 2\""
+    do_function_task "awx workflow_job_template_nodes create --workflow_job_template ${TMPL3_ID} --unified_job_template ${TMPL1_ID} --identifier \"Step 1\""
+    do_function_task "awx workflow_job_template_nodes create --workflow_job_template ${TMPL3_ID} --unified_job_template ${TMPL2_ID} --identifier \"Step 2\""
 
     local NOD1_COUNT
     local NOD1_ID
