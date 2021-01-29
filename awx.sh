@@ -198,7 +198,7 @@ do_configure_awx() {
     ## *************************************************************************************************** ##
     do_function_task "awx users create --username irjdekker --email ir.j.dekker@gmail.com --first_name Jeroen --last_name Dekker --password \"${PASSWORD}\""
     do_function_task "awx users grant --organization \"${ORG_NAME}\" --role admin irjdekker"
-    do_function_task "awx users grant --team \"Dekker\" --role member irjdekker}"
+    do_function_task "awx users grant --team \"Dekker\" --role member irjdekker"
 
     ## *************************************************************************************************** ##
     ## Create credentials
