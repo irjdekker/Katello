@@ -281,7 +281,7 @@ EOF
     VARIABLES='{"template_sec_env": "NS", "template_vault_env": "PRD"}'
     do_function_task "awx job_templates create --name \"Deploy Server (VM)\" --description \"Deploy Server (VM)\" --organization \"${ORG_NAME}\" --project ${PROJ_ID} --playbook install-vm-v2.yml --job_type run --inventory ${INV_ID} --allow_simultaneous true"
     do_function_task "awx job_templates create --name \"Configure Server (VM)\" --description \"Configure Server (VM)\" --organization \"${ORG_NAME}\" --project ${PROJ_ID} --playbook sat6_postinstall.yml --job_type run --inventory ${INV_ID} --allow_simultaneous true"
-    do_function_task "awx workflow_job_templates create --name \"Install Server (VM)\" --description \"Install Server (VM)\" --organization \"${ORG_NAME}\" --inventory ${INV_ID} --allow_simultaneous true --survey_enabled true --extra_vars '${VARIABLES}'"
+    do_function_task "awx workflow_job_templates create --name \"Install Server (VM)\" --description \"Install Server (VM)\" --organization \"${ORG_NAME}\" --inventory ${INV_ID} --allow_simultaneous true --survey_enabled true --ask_variables_on_launch false --ask_inventory_on_launch false --ask_scm_branch_on_launch false --ask_limit_on_launch false --scm_branch \"\" --limit \"\" --extra_vars '${VARIABLES}'"
 
     local TMPL1_COUNT
     local TMPL1_ID
