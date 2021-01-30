@@ -308,7 +308,7 @@ fi
 tput civis
 
 # Download functions file
-do_task "Download functions file" "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/master/functions/functions.sh -o \"${HOME}/functions.sh\""
+curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/master/functions/functions.sh -o "${HOME}/functions.sh"
 
 # Source functions file
 if [ -f "$HOME/functions.sh" ]; then
