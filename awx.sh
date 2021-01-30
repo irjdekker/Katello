@@ -387,11 +387,11 @@ do_install_hammer() {
 }
 
 do_setup_bashrc() {
-    do_function_task "echo \"export TOWER_HOST=http://localhost:8080\" | tee /root/.bashrc > /dev/null"
-    do_function_task "echo \"export TOWER_USERNAME=admin\" | tee /root/.bashrc > /dev/null"
-    do_function_task "echo \"export TOWER_PASSWORD=$ADMIN_PASSWORD\" | tee /root/.bashrc > /dev/null"
-    do_function_task "echo \"TOWER_LOGIN=$(awx login -f human)\" | tee /root/.bashrc > /dev/null"
-    do_function_task "echo \"eval ${TOWER_LOGIN}\" | tee /root/.bashrc > /dev/null"
+    do_function_task "echo \"export TOWER_HOST=http://localhost:8080\" | tee -a /root/.bashrc > /dev/null"
+    do_function_task "echo \"export TOWER_USERNAME=admin\" | tee -a /root/.bashrc > /dev/null"
+    do_function_task "echo \"export TOWER_PASSWORD=$ADMIN_PASSWORD\" | tee -a /root/.bashrc > /dev/null"
+    do_function_task "echo \"TOWER_LOGIN=$(awx login -f human)\" | tee -a /root/.bashrc > /dev/null"
+    do_function_task "echo \"eval ${TOWER_LOGIN}\" | tee -a /root/.bashrc > /dev/null"
 }
 
 print_padded_text() {
