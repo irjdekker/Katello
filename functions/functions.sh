@@ -51,7 +51,7 @@ VAULTFILE="vault.sh"
 ## *************************************************************************************************** ##
 
 do_download_vaultfile() {
-    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/vault/${VAULTFILE}.enc -o \"${HOME}/${VAULTFILE}\""
+    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/vault/${VAULTFILE}.enc -o \"${HOME}/${VAULTFILE}.enc\""
     do_function_task "/usr/bin/openssl enc -aes-256-cbc -md md5 -d -in \"${HOME}/${VAULTFILE}.enc\" -out \"${HOME}/${VAULTFILE}\" -pass pass:\"${PASSWORD}\""
     do_function_task "[ -f \"${HOME}/${VAULTFILE}.enc\" ] && rm -f \"${HOME}/${VAULTFILE}.enc\" || sleep 0.1"
     do_function_task "chmod 700 \"${HOME}/${VAULTFILE}\""
