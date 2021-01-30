@@ -466,6 +466,9 @@ do_function "Configure AWX" "do_configure_awx"
 ## Install Hammer CLI
 do_function "Install Hammer CLI" "do_install_hammer"
 
+## Clone IAAS repository
+do_task "Clone IAAS repository" "git clone http://gitlab.tanix.nl/root/iaas.git ~/iaas"
+
 ## Setup .bashrc
 do_function "Setup .bashrc" "do_setup_bashrc"
 
