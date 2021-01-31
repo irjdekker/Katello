@@ -218,7 +218,7 @@ do_configure_awx() {
     ## *************************************************************************************************** ##
     ## Create projects
     ## *************************************************************************************************** ##
-    do_function_task "awx projects create --name \"VM deployment\" --description \"VM deployment\" --organization \"${ORG_NAME}\" --scm_type git --scm_url http://gitlab.tanix.nl/root/iaas.git --credential gitlab${CRED_ID} --scm_update_on_launch true"
+    do_function_task "awx projects create --name \"VM deployment\" --description \"VM deployment\" --organization \"${ORG_NAME}\" --scm_type git --scm_url http://gitlab.tanix.nl/root/iaas.git --credential gitlab --scm_update_on_launch true"
 
     ## *************************************************************************************************** ##
     ## Create job templates
