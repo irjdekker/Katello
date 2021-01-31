@@ -270,30 +270,10 @@ do_configure_awx() {
         exit 1
     fi
 
-    local CRED1_COUNT
-    local CRED1_ID
-    CRED1_COUNT=$(awx credentials get vault -f human --filter id | tail -n +3 | wc -l)
-    if [ "${CRED1_COUNT}" == "1" ]; then
-        CRED1_ID=$(awx credentials get vault -f human --filter id | tail -n +3 | xargs)
-    else
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi
-
-    local CRED2_COUNT
-    local CRED2_ID
-    CRED2_COUNT=$(awx credentials get root -f human --filter id | tail -n +3 | wc -l)
-    if [ "${CRED2_COUNT}" == "1" ]; then
-        CRED2_ID=$(awx credentials get root -f human --filter id | tail -n +3 | xargs)
-    else
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi
-
-    do_function_task "awx job_templates associate --credential ${CRED1_ID} ${TMPL1_ID}"
-    do_function_task "awx job_templates associate --credential ${CRED1_ID} ${TMPL2_ID}"
-    do_function_task "awx job_templates associate --credential ${CRED2_ID} ${TMPL1_ID}"
-    do_function_task "awx job_templates associate --credential ${CRED2_ID} ${TMPL2_ID}"
+    do_function_task "awx job_templates associate --credential vault ${TMPL1_ID}"
+    do_function_task "awx job_templates associate --credential vault ${TMPL2_ID}"
+    do_function_task "awx job_templates associate --credential root ${TMPL1_ID}"
+    do_function_task "awx job_templates associate --credential root ${TMPL2_ID}"
 
     SURVEY='{"name":"","description":"","spec":[{"question_name":"Hostname","question_description":"FQDN of the system to deploy","required":true,"type":"text","variable":"survey_hostname","min":0,"max":1024,"default":"","choices":"","new_question":false},{"question_name":"Select the OS Version","question_description":"Select the OS Version","required":true,"type":"multiplechoice","variable":"survey_os_version","min":0,"max":1024,"default":"CentOS 8","choices":"CentOS 7\nCentOS 8","new_question":false},{"question_name":"Lifecycle environment","question_description":"Select the lifecycle environment","required":true,"type":"multiplechoice","variable":"survey_lifecycle","min":0,"max":1024,"default":"production","choices":"development\ntest\nacceptance\nproduction","new_question":false},{"question_name":"Location","question_description":"Select the location","required":true,"type":"multiplechoice","variable":"survey_location","min":0,"max":1024,"default":"home","choices":"home","new_question":false},{"question_name":"Role selection","question_description":"Enter the system_roles you want to select","required":true,"type":"multiplechoice","variable":"survey_role","min":0,"max":1024,"default":"none","choices":"web\nsmtp\ntr_cadappl\nnone","new_question":false}]}'
     do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/workflow_job_templates/${TMPL3_ID}/survey_spec/ -X POST -d '${SURVEY}'"
