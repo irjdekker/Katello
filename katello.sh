@@ -307,11 +307,11 @@ fi
 tput civis
 
 # Download functions file
-curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/functions/functions.sh -o "${HOME}/functions.sh"
+curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/functions/functions.sh -o "/tmp/functions.sh"
 
 # Source functions file
-if [ -f "$HOME/functions.sh" ]; then
-    source "$HOME/functions.sh"
+if [ -f "/tmp/functions.sh" ]; then
+    source "/tmp/functions.sh"
 else
     echo "Functions file not available"
     exit 1
@@ -321,8 +321,8 @@ fi
 do_function "Download vault file" "do_download_vaultfile"
 
 # Source vault file
-if [ -f "$HOME/$VAULTFILE" ]; then
-    source "$HOME/$VAULTFILE"
+if [ -f "/tmp/$VAULTFILE" ]; then
+    source "/tmp/$VAULTFILE"
 else
     echo "Vault file not available"
     exit 1
