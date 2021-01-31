@@ -36,8 +36,7 @@ IRed='\e[0;31m'
 IGreen='\e[0;32m'
 IYellow='\e[0;33m'
 Reset='\e[0m'
-SCRIPT=$(basename -- "$0" | sed "s/\.sh//g")
-LOGFILE="$HOME/$SCRIPT-install-$(date +%Y-%m-%d_%Hh%Mm).log"
+LOGFILE="$HOME/$SCRIPT_NAME-install-$(date +%Y-%m-%d_%Hh%Mm).log"
 VAULTFILE="vault.sh"
 
 ## *************************************************************************************************** ##

@@ -5,10 +5,8 @@
 ## The easiest way to get the script on your machine is:
 ## a) without specifying the password
 ## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.sh -o awx.sh 2>/dev/null && bash awx.sh && rm -f awx.sh
-## wget -O awx.sh https://raw.githubusercontent.com/irjdekker/Katello/master/awx.sh 2>/dev/null && bash awx.sh && rm -f awx.sh
 ## b) with specifying the password
 ## curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.sh 2>/dev/null | bash -s <password>
-## wget -O - https://raw.githubusercontent.com/irjdekker/Katello/master/awx.sh 2>/dev/null | bash -s <password>
 
 ## *************************************************************************************************** ##
 ##      __      __     _____  _____          ____  _      ______  _____                                ##
@@ -22,6 +20,7 @@
 ## The following variables are defined below
 
 COMMAND_DEBUG=true
+SCRIPT_NAME="awx"
 
 ## *************************************************************************************************** ##
 ##       _____   ____  _    _ _______ _____ _   _ ______  _____                                        ##
@@ -32,6 +31,51 @@ COMMAND_DEBUG=true
 ##      |_|  \_\\____/ \____/   |_|  |_____|_| \_|______|_____/                                        ##
 ##                                                                                                     ##
 ## *************************************************************************************************** ##
+
+do_create_files() {
+    cat <<EOF > /tmp/cred.yml
+---
+username: root
+ssh_key_data: |
+$(awk '{printf "      %s\n", $0}' < /tmp/key)
+EOF
+
+    cat <<EOF > /tmp/awx.conf
+server {
+   listen 80;
+   server_name awx.tanix.nl;
+   add_header Strict-Transport-Security max-age=2592000;
+   rewrite ^ https://$server_name$request_uri? permanent;
+}
+
+server {
+   listen 443 ssl http2;
+   server_name awx.tanix.nl;
+   
+   access_log /var/log/nginx/awx.access.log;
+   error_log /var/log/nginx/awx.error.log;
+
+   ssl on;
+   ssl_certificate /etc/letsencrypt/live/awx.tanix.nl/fullchain.pem;
+   ssl_certificate_key /etc/letsencrypt/live/awx.tanix.nl/privkey.pem;
+   ssl_session_timeout 5m;
+   ssl_ciphers EECDH+CHACHA20:EECDH+AES128:RSA+AES128:EECDH+AES256:RSA+AES256:EECDH+3DES:RSA+3DES:!MD5;
+   ssl_protocols TLSv1.2;
+   ssl_prefer_server_ciphers on;
+   
+   location / {
+      proxy_http_version 1.1;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_pass http://localhost:8080/;
+   }
+}
+EOF
+}
 
 do_disable_firewall() {
     do_function_task "systemctl stop firewalld"
@@ -99,7 +143,7 @@ do_setup_letsencrypt() {
 
 do_setup_nginx() {
     do_function_task "dnf install nginx -y"
-    do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/awx.conf -o /etc/nginx/conf.d/awx.conf"
+    do_function_task "/bin/cp -f /tmp/awx.conf /etc/nginx/conf.d/awx.conf"
     do_function_task "nginx -t"
     do_function_task "systemctl restart nginx"
 }
@@ -150,17 +194,7 @@ do_configure_awx() {
     do_function_task "awx credentials create --name katello_inventory --organization \"${ORG_NAME}\" --credential_type \"Red Hat Satellite 6\" --inputs \"{host: 'https://katello.tanix.nl', username: '${INV_USER}', password: '${INV_PASSWORD}'}\""
     do_function_task "awx credentials create --name gitlab --organization \"${ORG_NAME}\" --credential_type \"Source Control\" --inputs \"{username: 'root', password: '1234567890'}\""
     do_function_task "awx credentials create --name vault --organization \"${ORG_NAME}\" --credential_type \"Vault\" --inputs \"{vault_password: '1234567890'}\""
-    
-    cat <<EOF > /tmp/cred.yaml
----
-username: root
-ssh_key_data: |
-$(awk '{printf "      %s\n", $0}' < /tmp/key)
-EOF
-
-    do_function_task "awx credentials create --name root --organization \"${ORG_NAME}\" --credential_type \"Machine\" --inputs \"@/tmp/cred.yaml\""
-    do_function_task "rm -f /tmp/key"    
-    do_function_task "rm -f /tmp/cred.yaml"
+    do_function_task "awx credentials create --name root --organization \"${ORG_NAME}\" --credential_type \"Machine\" --inputs \"@/tmp/cred.yml\""
 
     ## *************************************************************************************************** ##
     ## Create inventories
@@ -184,17 +218,7 @@ EOF
     ## *************************************************************************************************** ##
     ## Create projects
     ## *************************************************************************************************** ##
-    local CRED_COUNT
-    local CRED_ID
-    CRED_COUNT=$(awx credentials get gitlab -f human --filter id | tail -n +3 | wc -l)
-    if [ "${CRED_COUNT}" == "1" ]; then
-        CRED_ID=$(awx credentials get gitlab -f human --filter id | tail -n +3 | xargs)
-    else
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi
-
-    do_function_task "awx projects create --name \"VM deployment\" --description \"VM deployment\" --organization \"${ORG_NAME}\" --scm_type git --scm_url http://gitlab.tanix.nl/root/iaas.git --credential ${CRED_ID} --scm_update_on_launch true"
+    do_function_task "awx projects create --name \"VM deployment\" --description \"VM deployment\" --organization \"${ORG_NAME}\" --scm_type git --scm_url http://gitlab.tanix.nl/root/iaas.git --credential gitlab${CRED_ID} --scm_update_on_launch true"
 
     ## *************************************************************************************************** ##
     ## Create job templates
@@ -211,21 +235,10 @@ EOF
 
     do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/projects/${JOB_ID}/update/ -X POST"
     sleep 60
-
-    local INV_COUNT
-    local INV_ID
-    INV_COUNT=$(awx inventory get "Empty inventory" -f human --filter id | tail -n +3 | wc -l)
-    if [ "${INV_COUNT}" == "1" ]; then
-        INV_ID=$(awx inventory get "Empty inventory" -f human --filter id | tail -n +3 | xargs)
-    else
-        print_task "${MESSAGE}" 1 true
-        exit 1
-    fi
-
     VARIABLES='{"template_sec_env": "NS", "template_vault_env": "PRD"}'
-    do_function_task "awx job_templates create --name \"Deploy Server (VM)\" --description \"Deploy Server (VM)\" --organization \"${ORG_NAME}\" --project ${PROJ_ID} --playbook install-vm-v2.yml --job_type run --inventory ${INV_ID} --allow_simultaneous true"
-    do_function_task "awx job_templates create --name \"Configure Server (VM)\" --description \"Configure Server (VM)\" --organization \"${ORG_NAME}\" --project ${PROJ_ID} --playbook sat6_postinstall.yml --job_type run --inventory ${INV_ID} --allow_simultaneous true"
-    do_function_task "awx workflow_job_templates create --name \"Install Server (VM)\" --description \"Install Server (VM)\" --organization \"${ORG_NAME}\" --inventory ${INV_ID} --allow_simultaneous true --survey_enabled true --ask_variables_on_launch false --ask_inventory_on_launch false --ask_scm_branch_on_launch false --ask_limit_on_launch false --scm_branch \"\" --limit \"\" --extra_vars '${VARIABLES}'"
+    do_function_task "awx job_templates create --name \"Deploy Server (VM)\" --description \"Deploy Server (VM)\" --organization \"${ORG_NAME}\" --project \"VM deployment\" --playbook install-vm-v2.yml --job_type run --inventory \"Empty inventory\" --allow_simultaneous true"
+    do_function_task "awx job_templates create --name \"Configure Server (VM)\" --description \"Configure Server (VM)\" --organization \"${ORG_NAME}\" --project \"VM deployment\" --playbook sat6_postinstall.yml --job_type run --inventory \"Empty inventory\" --allow_simultaneous true"
+    do_function_task "awx workflow_job_templates create --name \"Install Server (VM)\" --description \"Install Server (VM)\" --organization \"${ORG_NAME}\" --inventory \"Empty inventory\" --allow_simultaneous true --survey_enabled true --ask_variables_on_launch false --ask_inventory_on_launch false --ask_scm_branch_on_launch false --ask_limit_on_launch false --scm_branch \"\" --limit \"\" --extra_vars '${VARIABLES}'"
 
     local TMPL1_COUNT
     local TMPL1_ID
@@ -373,11 +386,11 @@ fi
 tput civis
 
 # Download functions file
-curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/functions/functions.sh -o "${HOME}/functions.sh"
+curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/functions/functions.sh -o "/tmp/functions.sh"
 
 # Source functions file
-if [ -f "$HOME/functions.sh" ]; then
-    source "$HOME/functions.sh"
+if [ -f "/tmp/functions.sh" ]; then
+    source "/tmp/functions.sh"
 else
     echo "Functions file not available"
     exit 1
@@ -387,12 +400,15 @@ fi
 do_function "Download vault file" "do_download_vaultfile"
 
 # Source vault file
-if [ -f "$HOME/$VAULTFILE" ]; then
-    source "$HOME/$VAULTFILE"
+if [ -f "/tmp/$VAULTFILE" ]; then
+    source "/tmp/$VAULTFILE"
 else
     echo "Vault file not available"
     exit 1
 fi
+
+## Create required files
+do_function "Create required files" "do_create_files"
 
 ## Setup locale
 do_function "Setup locale" "do_setup_locale"
