@@ -158,7 +158,7 @@ do_populate_katello() {
             location_lower=$(echo "$location" | tr "[:upper:]" "[:lower:]")
             hostgroup_name="hg_${lcm_lower}_${location_lower}_${OS_NICE}"
 
-            do_function_task "hammer hostgroup create --organization-id \"${ORG_ID}\" --location \"${location}\" --name \"${hostgroup_name}\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --content-source \"katello.tanix.nl\" --compute-resource \"${VMWARE}\" --compute-profile \"1-Small\" --domain-id \"${domain_id}\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS-${tmpOS:0:1}\" --partition-table \"Kickstart default\""
+            do_function_task "hammer hostgroup create --organization-id \"${ORG_ID}\" --location \"${location}\" --name \"${hostgroup_name}\" --lifecycle-environment \"${lcm}\" --content-view \"CentOS ${OS_VERSION}\" --content-source \"katello.tanix.nl\" --compute-resource \"${VLT_KAT_VMWARE_NAME}\" --compute-profile \"1-Small\" --domain-id \"${domain_id}\" --subnet \"tanix-5\" --architecture \"x86_64\" --operatingsystem \"CentOS-${tmpOS:0:1}\" --partition-table \"Kickstart default\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"centos-version\" --parameter-type string --value \"${tmpVersion}\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"yum-config-manager-disable-repo\" --parameter-type boolean --value \"true\""
             do_function_task "hammer hostgroup set-parameter --hostgroup \"${hostgroup_name}\" --name \"host_registration_remote_execution\" --parameter-type boolean --value \"true\""

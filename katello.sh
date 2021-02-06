@@ -77,31 +77,31 @@ do_config_katello() {
 
 do_install_katello() {
     if [ "${CREATE_ORG}" = true ] ; then
-        do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username \"${ADMIN_USER}\" --foreman-initial-admin-password \"${ADMIN_PASSWORD}\""
+        do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username \"${VLT_KAT_ADMIN_USER}\" --foreman-initial-admin-password \"${VLT_KAT_ADMIN_PW}\""
         do_function_task "foreman-maintain service status"
     else
-        do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username \"${ADMIN_USER}\" --foreman-initial-admin-password \"${ADMIN_PASSWORD}\" --foreman-initial-organization \"${ORG_NAME}\" --foreman-initial-location \"${ORG_LOCATION}\""
+        do_function_task "foreman-installer --scenario katello --foreman-initial-admin-username \"${VLT_KAT_ADMIN_USER}\" --foreman-initial-admin-password \"${VLT_KAT_ADMIN_PW}\" --foreman-initial-organization \"${VLT_KAT_ORG_NAME}\" --foreman-initial-location \"${VLT_KAT_ORG_LOCATION}\""
         do_function_task "foreman-maintain service status"
     fi
 }
 
 do_create_organization() {
     if [ "${CREATE_ORG}" = true ] ; then
-        do_function_task "hammer organization create --name \"${ORG_NAME}\" --label \"${ORG_NAME}\" --description \"${ORG_NAME}\""
-        ORG_ID=$(hammer --no-headers organization list --search "${ORG_NAME}" --fields Id | awk '{$1=$1};1')
+        do_function_task "hammer organization create --name \"${VLT_KAT_ORG_NAME}\" --label \"${VLT_KAT_ORG_NAME}\" --description \"${VLT_KAT_ORG_NAME}\""
+        ORG_ID=$(hammer --no-headers organization list --search "${VLT_KAT_ORG_NAME}" --fields Id | awk '{$1=$1};1')
         export ORG_ID
-        do_function_task "hammer location create --name \"${ORG_LOCATION}\""
-        LOC_ID=$(hammer --no-headers location list --search "${ORG_LOCATION}" --fields Id | awk '{$1=$1};1')
+        do_function_task "hammer location create --name \"${VLT_KAT_ORG_LOCATION}\""
+        LOC_ID=$(hammer --no-headers location list --search "${VLT_KAT_ORG_LOCATION}" --fields Id | awk '{$1=$1};1')
         export LOC_ID
         do_function_task "hammer domain update --id 1 --organization-id \"${ORG_ID}\" --location-id \"{LOC_ID}\""
         do_function_task "hammer proxy update --id 1 --organization-id \"${ORG_ID}\" --location-id \"{LOC_ID}\""
-        do_function_task "hammer location add-organization --name \"${ORG_LOCATION}\" --organization \"${ORG_NAME}\""
-        do_function_task "hammer role clone --name \"Organization admin\" --new-name \"${ORG_NAME} admin\""
-        do_function_task "hammer role update --name \"${ORG_NAME} admin\" --organization-ids \"${ORG_ID}\" --location-ids \"${LOC_ID}\""
-        do_function_task "hammer user create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --default-organization-id \"${ORG_ID}\" --default-location-id \"${LOC_ID}\" --login \"${ORG_USER}\" --password \"${ORG_PASSWORD}\" --mail \"${ORG_MAIL}\" --auth-source-id 1"
+        do_function_task "hammer location add-organization --name \"${VLT_KAT_ORG_LOCATION}\" --organization \"${VLT_KAT_ORG_NAME}\""
+        do_function_task "hammer role clone --name \"Organization admin\" --new-name \"${VLT_KAT_ORG_NAME} admin\""
+        do_function_task "hammer role update --name \"${VLT_KAT_ORG_NAME} admin\" --organization-ids \"${ORG_ID}\" --location-ids \"${LOC_ID}\""
+        do_function_task "hammer user create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --default-organization-id \"${ORG_ID}\" --default-location-id \"${LOC_ID}\" --login \"${VLT_KAT_STD_USER}\" --password \"${VLT_KAT_STD_PW}\" --mail \"${VLT_KAT_STD_MAIL}\" --auth-source-id 1"
         local USER_ID
-        USER_ID=$(hammer --no-headers user list --fields Id --search "${ORG_USER}" | awk '{$1=$1};1')
-        do_function_task "hammer user add-role --id \"${USER_ID}\" --role \"${ORG_NAME} admin\""
+        USER_ID=$(hammer --no-headers user list --fields Id --search "${VLT_KAT_STD_USER}" | awk '{$1=$1};1')
+        do_function_task "hammer user add-role --id \"${USER_ID}\" --role \"${VLT_KAT_ORG_NAME} admin\""
     else
         export ORG_ID=1
         export LOC_ID=2
@@ -109,25 +109,25 @@ do_create_organization() {
 }
 
 do_compute_resource() {
-    do_function_task "hammer compute-resource create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --name \"${VMWARE_NAME}\" --provider \"Vmware\" --server \"${VCENTER}\" --user \"${VCENTER_USER}\" --password \"${VCENTER_PASSWORD}\" --datacenter \"${VMWARE_DC}\""
+    do_function_task "hammer compute-resource create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --name \"${VLT_KAT_VMWARE_NAME}\" --provider \"Vmware\" --server \"${VLT_KAT_VMWARE_VCENTER}\" --user \"${VLT_KAT_VCENTER_USER}\" --password \"${VLT_KAT_VCENTER_PW}\" --datacenter \"${VLT_KAT_VMWARE_DC}\""
     local RES_ID
-    RES_ID=$(hammer --no-headers compute-resource list --fields Id --search "${VMWARE_NAME}" | awk '{$1=$1};1')
-    do_function_task "curl -u ${ADMIN_USER}:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://katello.tanix.nl/api/compute_resources/${RES_ID}/refresh_cache -X PUT"
+    RES_ID=$(hammer --no-headers compute-resource list --fields Id --search "${VLT_KAT_VMWARE_NAME}" | awk '{$1=$1};1')
+    do_function_task "curl -u ${VLT_KAT_ADMIN_USER}:${VLT_KAT_ADMIN_PW} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://katello.tanix.nl/api/compute_resources/${RES_ID}/refresh_cache -X PUT"
 }
 
 do_compute_profiles() {
     local network_id
-    network_id=$(hammer --no-headers compute-resource networks --organization-id "${ORG_ID}" --location-id "${LOC_ID}" --name "${VMWARE_NAME}" --fields Id,Name | grep "${VMWARE_NETWORK}" | cut -d '|' -f 1 | awk '{$1=$1};1')
+    network_id=$(hammer --no-headers compute-resource networks --organization-id "${ORG_ID}" --location-id "${LOC_ID}" --name "${VLT_KAT_VMWARE_NAME}" --fields Id,Name | grep "${VLT_KAT_VMWARE_NETWORK}" | cut -d '|' -f 1 | awk '{$1=$1};1')
 
-    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"1-Small\" --compute-resource \"${VMWARE_NAME}\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"${VMWARE_DATASTORE}\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5" "120"
-    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"2-Medium\" --compute-resource \"${VMWARE_NAME}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"${VMWARE_DATASTORE}\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5" "120"
-    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"3-Large\" --compute-resource \"${VMWARE_NAME}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=4096,firmware=automatic,cluster=${VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"${VMWARE_DATASTORE}\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5" "120"
+    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"1-Small\" --compute-resource \"${VLT_KAT_VMWARE_NAME}\" --compute-attributes cpus=1,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VLT_KAT_VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VLT_KAT_VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"${VLT_KAT_VMWARE_DATASTORE}\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5" "120"
+    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"2-Medium\" --compute-resource \"${VLT_KAT_VMWARE_NAME}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=2048,firmware=automatic,cluster=${VLT_KAT_VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VLT_KAT_VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"${VLT_KAT_VMWARE_DATASTORE}\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5" "120"
+    do_function_task_retry "hammer compute-profile values create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --compute-profile \"3-Large\" --compute-resource \"${VLT_KAT_VMWARE_NAME}\" --compute-attributes cpus=2,corespersocket=1,memory_mb=4096,firmware=automatic,cluster=${VLT_KAT_VMWARE_CL},resource_pool=Resources,path=\"/Datacenters/${VLT_KAT_VMWARE_DC}/vm\",guest_id=otherGuest,hardware_version=Default,memoryHotAddEnabled=1,cpuHotAddEnabled=1,add_cdrom=0,boot_order=[disk],scsi_controller_type=VirtualLsiLogicController --volume name=\"Hard disk\",mode=persistent,datastore=\"${VLT_KAT_VMWARE_DATASTORE}\",size_gb=30,thin=true --interface compute_type=VirtualVmxnet3,compute_network=${network_id}" "5" "120"
 }
 
 do_create_subnet() {
     local domain_id
     domain_id=$(hammer --no-headers domain list --organization-id "${ORG_ID}" --location-id "${LOC_ID}" --fields Id | awk '{$1=$1};1')
-    do_function_task "hammer subnet create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --domain-ids \"${domain_id}\" --name \"${VMWARE_NETWORK}\" --network-type \"IPv4\" --network \"10.10.5.0\" --prefix 24 --gateway \"10.10.5.1\" --dns-primary \"10.10.5.1\" --boot-mode \"Static\""
+    do_function_task "hammer subnet create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --domain-ids \"${domain_id}\" --name \"${VLT_KAT_VMWARE_NETWORK}\" --network-type \"IPv4\" --network \"10.10.5.0\" --prefix 24 --gateway \"10.10.5.1\" --dns-primary \"10.10.5.1\" --boot-mode \"Static\""
 }
 
 do_setup_credentials() {
@@ -185,7 +185,7 @@ do_create_templates() {
 do_register_katello() {
     do_function_task "curl --insecure --output katello-ca-consumer-latest.noarch.rpm https://katello.tanix.nl/pub/katello-ca-consumer-latest.noarch.rpm"
     do_function_task "yum localinstall katello-ca-consumer-latest.noarch.rpm -y"
-    do_function_task "subscription-manager register --org=\"${ORG_NAME}\" --activationkey=\"CentOS_7_x_Production_Key\""
+    do_function_task "subscription-manager register --org=\"${VLT_KAT_ORG_NAME}\" --activationkey=\"CentOS_7_x_Production_Key\""
 }
 
 do_fix_ipxe() {
@@ -203,7 +203,7 @@ do_fix_ipxe() {
 }
 
 do_inventory_account() {
-    do_function_task "hammer user create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --default-organization-id \"${ORG_ID}\" --default-location-id \"${LOC_ID}\" --login \"${INV_USER}\" --password \"${INV_PASSWORD}\" --mail \"${INV_MAIL}\" --auth-source-id 1"
+    do_function_task "hammer user create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --default-organization-id \"${ORG_ID}\" --default-location-id \"${LOC_ID}\" --login \"${VLT_KAT_INV_USER}\" --password \"${VLT_KAT_INV_PW}\" --mail \"${VLT_KAT_INV_MAIL}\" --auth-source-id 1"
     do_function_task "hammer role create --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --name \"Sync inventory\""
     local PERM_ID1
     PERM_ID1=$(hammer --no-headers filter available-permissions --fields Id --search view_hosts | awk '{$1=$1};1')
@@ -215,7 +215,7 @@ do_inventory_account() {
     PERM_ID3=$(hammer --no-headers filter available-permissions --fields Id --search view_facts | awk '{$1=$1};1')
     do_function_task "hammer filter create --role \"Sync inventory\" --permission-ids ${PERM_ID3}}"
     local USER_ID
-    USER_ID=$(hammer --no-headers user list --fields Id --search "${INV_USER}" | awk '{$1=$1};1')
+    USER_ID=$(hammer --no-headers user list --fields Id --search "${VLT_KAT_INV_USER}" | awk '{$1=$1};1')
     do_function_task "hammer user add-role --id ${USER_ID} --role \"Sync inventory\""
 }
 
@@ -236,7 +236,7 @@ do_create_host() {
 
     while read -r repo_id;
     do
-        if curl -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -s "https://katello.tanix.nl/katello/api/v2/repositories/${repo_id}" | jq | grep 'bootable' | grep 'true' > /dev/null; then
+        if curl -u "${VLT_KAT_ADMIN_USER}:${VLT_KAT_ADMIN_PW}" -s "https://katello.tanix.nl/katello/api/v2/repositories/${repo_id}" | jq | grep 'bootable' | grep 'true' > /dev/null; then
             repository_id="${repo_id}"
             break
         fi
@@ -252,7 +252,7 @@ do_create_host() {
         compute_profile=$(hammer hostgroup info --id "${hostgroup_id}" --fields "Compute Profile" | grep -i "compute profile" | cut -d ":" -f 2 | awk '{$1=$1};1')
     fi
 
-    do_function_task "hammer host create --name \"${NAME}\" --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --hostgroup-id \"${hostgroup_id}\" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"${ADMIN_USER}\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${DEFAULT_ROOT_PASSWORD=}\" --ip \"${IP}\" --compute-attributes \"start=1\""
+    do_function_task "hammer host create --name \"${NAME}\" --organization-id \"${ORG_ID}\" --location-id \"${LOC_ID}\" --hostgroup-id \"${hostgroup_id}\" --compute-profile \"${compute_profile}\" --owner-type \"User\" --owner \"${VLT_KAT_ADMIN_USER}\" --provision-method bootdisk --kickstart-repository-id \"${repository_id}\" --build 1 --managed 1 --comment \"Build via script on $(date)\" --root-password \"${VLT_DEF_ROOT_PW}\" --ip \"${IP}\" --compute-attributes \"start=1\""
 
     for((i=1;i<=15;++i)); do
         sleep 60

@@ -19,25 +19,6 @@
 ##          \/_/    \_\_|  \_\_____/_/    \_\____/|______|______|_____/                                ##
 ##                                                                                                     ##
 ## *************************************************************************************************** ##
-## Following variables are defined in sourced shell script
-##      ADMIN_USER
-##      ADMIN_PASSWORD
-##      ORG_NAME
-##      ORG_LOCATION
-##      ORG_USER
-##      ORG_PASSWORD
-##      ORG_MAIL
-##      INV_USER
-##      INV_PASSWORD
-##      INV_MAIL
-##      VMWARE_NAME
-##      VCENTER
-##      VCENTER_USER
-##      VCENTER_PASSWORD
-##      VMWARE_DC
-##      VMWARE_CL
-##      VMWARE_NETWORK
-##
 ## The following variables are defined below
 
 LOGFILE="$HOME/awx-install-$(date +%Y-%m-%d_%Hh%Mm).log"
@@ -122,10 +103,10 @@ do_setup_letsencrypt() {
     do_function_task "mkdir -p /root/certificate"
     do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-auth.sh -o /root/certificate/cf-auth.sh"
     do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-clean.sh -o /root/certificate/cf-clean.sh"
-    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-auth.sh"
-    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-auth.sh"
-    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-clean.sh"
-    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-clean.sh"
+    do_function_task "sed -i \"s/<CERT_API>/${VLT_DEF_CRT_API}/\" /root/certificate/cf-auth.sh"
+    do_function_task "sed -i \"s/<CERT_EMAIL>/${VLT_DEF_CRT_EMAIL}/\" /root/certificate/cf-auth.sh"
+    do_function_task "sed -i \"s/<CERT_API>/${VLT_DEF_CRT_API}/\" /root/certificate/cf-clean.sh"
+    do_function_task "sed -i \"s/<CERT_EMAIL>/${VLT_DEF_CRT_EMAIL}/\" /root/certificate/cf-clean.sh"
     do_function_task "chmod 700 /root/certificate/*.sh"
     do_function_task "dnf install certbot python3-certbot-nginx -y"
     # do_function_task "/usr/bin/certbot certonly --test-cert --manual --preferred-challenges dns --manual-auth-hook /root/certificate/cf-auth.sh --manual-cleanup-hook /root/certificate/cf-clean.sh --rsa-key-size 2048 --renew-by-default --register-unsafely-without-email --agree-tos --non-interactive -d gitlab.tanix.nl"

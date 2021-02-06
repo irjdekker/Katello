@@ -115,7 +115,7 @@ do_update_inventory() {
     SECRET_KEY=$(openssl rand -base64 30 | sed 's/[\\&*./+!]/\\&/g')
 
     do_function_task "sed -i 's/^.*host_port.*$/host_port=8080/g' /root/awx/installer/inventory"
-    do_function_task "sed -i \"s/^\s*admin_password=password\s*$/admin_password=${ADMIN_PASSWORD}/g\" /root/awx/installer/inventory"
+    do_function_task "sed -i \"s/^\s*admin_password=password\s*$/admin_password=${VLT_AWX_ADMIN_PW}/g\" /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*create_preload_data.*$/create_preload_data=false/g' /root/awx/installer/inventory"
     do_function_task "sed -i \"s/^\s*secret_key=awxsecret\s*$/secret_key=${SECRET_KEY}/g\" /root/awx/installer/inventory"
     do_function_task "sed -i 's/^.*awx_official.*$/awx_official=true/g' /root/awx/installer/inventory"
@@ -132,10 +132,10 @@ do_setup_letsencrypt() {
     do_function_task "mkdir -p /root/certificate"
     do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-auth.sh -o /root/certificate/cf-auth.sh"
     do_function_task "curl -s https://raw.githubusercontent.com/irjdekker/Katello/master/certificate/cf-clean.sh -o /root/certificate/cf-clean.sh"
-    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-auth.sh"
-    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-auth.sh"
-    do_function_task "sed -i \"s/<CERT_API>/${CERT_API}/\" /root/certificate/cf-clean.sh"
-    do_function_task "sed -i \"s/<CERT_EMAIL>/${CERT_EMAIL}/\" /root/certificate/cf-clean.sh"
+    do_function_task "sed -i \"s/<CERT_API>/${VLT_DEF_CRT_API}/\" /root/certificate/cf-auth.sh"
+    do_function_task "sed -i \"s/<CERT_EMAIL>/${VLT_DEF_CRT_EMAIL}/\" /root/certificate/cf-auth.sh"
+    do_function_task "sed -i \"s/<CERT_API>/${VLT_DEF_CRT_API}/\" /root/certificate/cf-clean.sh"
+    do_function_task "sed -i \"s/<CERT_EMAIL>/${VLT_DEF_CRT_EMAIL}/\" /root/certificate/cf-clean.sh"
     do_function_task "chmod 700 /root/certificate/*.sh"
     do_function_task "dnf install certbot python3-certbot-nginx -y"
     do_function_task "/usr/bin/certbot certonly --test-cert --manual --preferred-challenges dns --manual-auth-hook /root/certificate/cf-auth.sh --manual-cleanup-hook /root/certificate/cf-clean.sh --rsa-key-size 2048 --renew-by-default --register-unsafely-without-email --agree-tos --non-interactive -d awx.tanix.nl"
@@ -154,7 +154,7 @@ do_configure_awx() {
 
     for((i=1;i<=15;++i)); do
         sleep 60
-        EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="$ADMIN_PASSWORD" awx login -f human)
+        EXPORT=$(TOWER_USERNAME=admin TOWER_PASSWORD="${VLT_AWX_ADMIN_PW}" awx login -f human)
         if [[ "${EXPORT}" == *"export"* ]]; then
             RETURN="0"
             break
@@ -174,33 +174,33 @@ do_configure_awx() {
     ## *************************************************************************************************** ##
     ## Create organization
     ## *************************************************************************************************** ##
-    do_function_task "awx organizations create --name \"${ORG_NAME}\" --description \"${ORG_NAME}\" --max_hosts 100"
+    do_function_task "awx organizations create --name \"${VLT_AWX_ORG_NAME}\" --description \"${VLT_AWX_ORG_NAME}\" --max_hosts 100"
 
     ## *************************************************************************************************** ##
     ## Create team
     ## *************************************************************************************************** ##
-    do_function_task "awx teams create --name \"Dekker\" --description \"Dekker\" --organization \"${ORG_NAME}\""
+    do_function_task "awx teams create --name \"Dekker\" --description \"Dekker\" --organization \"${VLT_AWX_ORG_NAME}\""
 
     ## *************************************************************************************************** ##
     ## Create user
     ## *************************************************************************************************** ##
     do_function_task "awx users create --username irjdekker --email ir.j.dekker@gmail.com --first_name Jeroen --last_name Dekker --password \"${PASSWORD}\""
-    do_function_task "awx users grant --organization \"${ORG_NAME}\" --role admin irjdekker"
+    do_function_task "awx users grant --organization \"${VLT_AWX_ORG_NAME}\" --role admin irjdekker"
     do_function_task "awx users grant --team \"Dekker\" --role member irjdekker"
 
     ## *************************************************************************************************** ##
     ## Create credentials
     ## *************************************************************************************************** ##
-    do_function_task "awx credentials create --name katello_inventory --organization \"${ORG_NAME}\" --credential_type \"Red Hat Satellite 6\" --inputs \"{host: 'https://katello.tanix.nl', username: '${INV_USER}', password: '${INV_PASSWORD}'}\""
-    do_function_task "awx credentials create --name gitlab --organization \"${ORG_NAME}\" --credential_type \"Source Control\" --inputs \"{username: 'root', password: '1234567890'}\""
-    do_function_task "awx credentials create --name vault --organization \"${ORG_NAME}\" --credential_type \"Vault\" --inputs \"{vault_password: '1234567890'}\""
-    do_function_task "awx credentials create --name root --organization \"${ORG_NAME}\" --credential_type \"Machine\" --inputs \"@/tmp/cred.yml\""
+    do_function_task "awx credentials create --name katello_inventory --organization \"${VLT_AWX_ORG_NAME}\" --credential_type \"Red Hat Satellite 6\" --inputs \"{host: 'https://katello.tanix.nl', username: '${VLT_KAT_INV_USER}', password: '${VLT_KAT_INV_PW}'}\""
+    do_function_task "awx credentials create --name gitlab --organization \"${VLT_AWX_ORG_NAME}\" --credential_type \"Source Control\" --inputs \"{username: 'root', password: '1234567890'}\""
+    do_function_task "awx credentials create --name vault --organization \"${VLT_AWX_ORG_NAME}\" --credential_type \"Vault\" --inputs \"{vault_password: '1234567890'}\""
+    do_function_task "awx credentials create --name root --organization \"${VLT_AWX_ORG_NAME}\" --credential_type \"Machine\" --inputs \"@/tmp/cred.yml\""
 
     ## *************************************************************************************************** ##
     ## Create inventories
     ## *************************************************************************************************** ##
-    do_function_task "awx inventory create --name \"Empty inventory\" --description \"Empty inventory\" --organization \"${ORG_NAME}\""
-    do_function_task "awx inventory create --name \"Katello inventory\" --description \"Katello inventory\" --organization \"${ORG_NAME}\""
+    do_function_task "awx inventory create --name \"Empty inventory\" --description \"Empty inventory\" --organization \"${VLT_AWX_ORG_NAME}\""
+    do_function_task "awx inventory create --name \"Katello inventory\" --description \"Katello inventory\" --organization \"${VLT_AWX_ORG_NAME}\""
 
     local CRED_COUNT
     local CRED_ID
@@ -218,7 +218,7 @@ do_configure_awx() {
     ## *************************************************************************************************** ##
     ## Create projects
     ## *************************************************************************************************** ##
-    do_function_task "awx projects create --name \"VM deployment\" --description \"VM deployment\" --organization \"${ORG_NAME}\" --scm_type git --scm_url http://gitlab.tanix.nl/root/iaas.git --credential gitlab --scm_update_on_launch true"
+    do_function_task "awx projects create --name \"VM deployment\" --description \"VM deployment\" --organization \"${VLT_AWX_ORG_NAME}\" --scm_type git --scm_url http://gitlab.tanix.nl/root/iaas.git --credential gitlab --scm_update_on_launch true"
 
     ## *************************************************************************************************** ##
     ## Create job templates
@@ -233,12 +233,12 @@ do_configure_awx() {
         exit 1
     fi
 
-    do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/projects/${JOB_ID}/update/ -X POST"
+    do_function_task "curl -u admin:${VLT_AWX_ADMIN_PW} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/projects/${JOB_ID}/update/ -X POST"
     sleep 60
     VARIABLES='{"template_sec_env": "NS", "template_vault_env": "PRD"}'
-    do_function_task "awx job_templates create --name \"Deploy Server (VM)\" --description \"Deploy Server (VM)\" --organization \"${ORG_NAME}\" --project \"VM deployment\" --playbook install-vm-v2.yml --job_type run --inventory \"Empty inventory\" --allow_simultaneous true"
-    do_function_task "awx job_templates create --name \"Configure Server (VM)\" --description \"Configure Server (VM)\" --organization \"${ORG_NAME}\" --project \"VM deployment\" --playbook sat6_postinstall.yml --job_type run --inventory \"Empty inventory\" --allow_simultaneous true"
-    do_function_task "awx workflow_job_templates create --name \"Install Server (VM)\" --description \"Install Server (VM)\" --organization \"${ORG_NAME}\" --inventory \"Empty inventory\" --allow_simultaneous true --survey_enabled true --ask_variables_on_launch false --ask_inventory_on_launch false --ask_scm_branch_on_launch false --ask_limit_on_launch false --scm_branch \"\" --limit \"\" --extra_vars '${VARIABLES}'"
+    do_function_task "awx job_templates create --name \"Deploy Server (VM)\" --description \"Deploy Server (VM)\" --organization \"${VLT_AWX_ORG_NAME}\" --project \"VM deployment\" --playbook install-vm-v2.yml --job_type run --inventory \"Empty inventory\" --allow_simultaneous true"
+    do_function_task "awx job_templates create --name \"Configure Server (VM)\" --description \"Configure Server (VM)\" --organization \"${VLT_AWX_ORG_NAME}\" --project \"VM deployment\" --playbook sat6_postinstall.yml --job_type run --inventory \"Empty inventory\" --allow_simultaneous true"
+    do_function_task "awx workflow_job_templates create --name \"Install Server (VM)\" --description \"Install Server (VM)\" --organization \"${VLT_AWX_ORG_NAME}\" --inventory \"Empty inventory\" --allow_simultaneous true --survey_enabled true --ask_variables_on_launch false --ask_inventory_on_launch false --ask_scm_branch_on_launch false --ask_limit_on_launch false --scm_branch \"\" --limit \"\" --extra_vars '${VARIABLES}'"
 
     local TMPL1_COUNT
     local TMPL1_ID
@@ -276,7 +276,7 @@ do_configure_awx() {
     do_function_task "awx job_templates associate --credential root ${TMPL2_ID}"
 
     SURVEY='{"name":"","description":"","spec":[{"question_name":"Hostname","question_description":"FQDN of the system to deploy","required":true,"type":"text","variable":"survey_hostname","min":0,"max":1024,"default":"","choices":"","new_question":false},{"question_name":"Select the OS Version","question_description":"Select the OS Version","required":true,"type":"multiplechoice","variable":"survey_os_version","min":0,"max":1024,"default":"CentOS 8","choices":"CentOS 7\nCentOS 8","new_question":false},{"question_name":"Lifecycle environment","question_description":"Select the lifecycle environment","required":true,"type":"multiplechoice","variable":"survey_lifecycle","min":0,"max":1024,"default":"production","choices":"development\ntest\nacceptance\nproduction","new_question":false},{"question_name":"Location","question_description":"Select the location","required":true,"type":"multiplechoice","variable":"survey_location","min":0,"max":1024,"default":"home","choices":"home","new_question":false},{"question_name":"Role selection","question_description":"Enter the system_roles you want to select","required":true,"type":"multiplechoice","variable":"survey_role","min":0,"max":1024,"default":"none","choices":"web\nsmtp\ntr_cadappl\nnone","new_question":false}]}'
-    do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/workflow_job_templates/${TMPL3_ID}/survey_spec/ -X POST -d '${SURVEY}'"
+    do_function_task "curl -u admin:${VLT_AWX_ADMIN_PW} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/workflow_job_templates/${TMPL3_ID}/survey_spec/ -X POST -d '${SURVEY}'"
 
     ## *************************************************************************************************** ##
     ## Create job templates nodes
@@ -304,7 +304,7 @@ do_configure_awx() {
         exit 1
     fi
 
-    do_function_task "curl -u admin:${ADMIN_PASSWORD} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/workflow_job_template_nodes/${NOD1_ID}/success_nodes/ -X POST -d '{\"id\":${NOD2_ID}}'"
+    do_function_task "curl -u admin:${VLT_AWX_ADMIN_PW} -H 'Content-Type:application/json' -H 'Accept:application/json' -k https://awx.tanix.nl/api/v2/workflow_job_template_nodes/${NOD1_ID}/success_nodes/ -X POST -d '{\"id\":${NOD2_ID}}'"
 }
 
 do_install_hammer() {
@@ -318,7 +318,7 @@ do_install_hammer() {
     do_function_task "docker exec awx_task /bin/bash -c \"cat /etc/hammer/cli.modules.d/foreman.yml | grep -e ':foreman' -e ':host' -e ':username' -e ':password' -e ':refresh_cache' -e ':request_timeout' | sed 's/#//g' > /var/lib/awx/.hammer/cli.modules.d/foreman.yml\""
     do_function_task "docker exec awx_task chmod 600 /var/lib/awx/.hammer/cli.modules.d/foreman.yml"
     do_function_task "docker exec awx_task sed -i 's/localhost/katello.tanix.nl/g' /var/lib/awx/.hammer/cli.modules.d/foreman.yml"
-    do_function_task "docker exec awx_task sed -i 's/example/${ADMIN_PASSWORD}/g' /var/lib/awx/.hammer/cli.modules.d/foreman.yml"
+    do_function_task "docker exec awx_task sed -i 's/example/${VLT_AWX_ADMIN_PW}/g' /var/lib/awx/.hammer/cli.modules.d/foreman.yml"
     do_function_task "docker exec awx_task sed -i 's/seconds//g' /var/lib/awx/.hammer/cli.modules.d/foreman.yml"
     do_function_task "docker exec awx_task hammer --fetch-ca-cert https://katello.tanix.nl/"
 }
@@ -326,7 +326,7 @@ do_install_hammer() {
 do_setup_bashrc() {
     do_function_task "echo \"export TOWER_HOST=http://localhost:8080\" | tee -a /root/.bashrc > /dev/null"
     do_function_task "echo \"export TOWER_USERNAME=admin\" | tee -a /root/.bashrc > /dev/null"
-    do_function_task "echo \"export TOWER_PASSWORD=$ADMIN_PASSWORD\" | tee -a /root/.bashrc > /dev/null"
+    do_function_task "echo \"export TOWER_PASSWORD=${VLT_AWX_ADMIN_PW}\" | tee -a /root/.bashrc > /dev/null"
 }
 
 ## *************************************************************************************************** ##

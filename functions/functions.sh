@@ -11,25 +11,6 @@
 ##          \/_/    \_\_|  \_\_____/_/    \_\____/|______|______|_____/                                ##
 ##                                                                                                     ##
 ## *************************************************************************************************** ##
-## Following variables are defined in sourced shell script
-##      ADMIN_USER
-##      ADMIN_PASSWORD
-##      ORG_NAME
-##      ORG_LOCATION
-##      ORG_USER
-##      ORG_PASSWORD
-##      ORG_MAIL
-##      INV_USER
-##      INV_PASSWORD
-##      INV_MAIL
-##      VMWARE_NAME
-##      VCENTER
-##      VCENTER_USER
-##      VCENTER_PASSWORD
-##      VMWARE_DC
-##      VMWARE_CL
-##      VMWARE_NETWORK
-##
 ## The following variables are defined below
 
 IRed='\e[0;31m'
